@@ -238,8 +238,8 @@ Quando este sprint estiver fechado, a Fase 2 do PRD começa.
 **Aceite:** consigo conectar 2 clientes simulados (script Node) numa mesma sala e ver um o outro entrar; host atualiza settings e o outro client recebe broadcast.
 
 #### B4. Game loop (Clássico Turbinado simplificado)
-- [ ] Ao `room:start`: server chama `selectTracksForGame({ genres, decades, count: totalRounds })` do Bloco **E2** (Provider Deezer + cache). Validação anti-vazio: se retornar `< totalRounds`, abortar com `error: { code: 'INSUFFICIENT_TRACKS' }` ⚠️ *(pós-revisão: antes era "seleciona N tracks aleatórias do banco" direto)*
-- [ ] Loop por round:
+- [ ] Ao `room:start`: server chama `selectTracksForGame({ genres, decades, count: totalRounds })` do Bloco **E2** → passa as N tracks selecionadas para **`preloadRoundQueue()` (B5)** que re-fetcha URLs frescas → resultado é a queue em memória. Validação anti-vazio: se queue resultar em `< totalRounds`, abortar com `INSUFFICIENT_TRACKS` ou `DEEZER_UNAVAILABLE_FOR_START` (ver B5).
+- [ ] Loop por round (consome da queue de B5, **não** acessa `Track.previewUrl` diretamente):
   - emit `game:countdown` (3, 2, 1, com setTimeout)
   - emit `game:round:started` com `{ roundIndex, previewUrl, durationSeconds: 20 }`
   - timer de 20s
@@ -250,6 +250,21 @@ Quando este sprint estiver fechado, a Fase 2 do PRD começa.
 - [ ] Persistir Game e Rounds no Postgres ao fim
 
 **Aceite:** dois clientes simulados jogam uma partida de 3 rounds e cada um recebe `game:ended` com ranking correto.
+
+#### B5. Pre-load de tracks — pré-requisito de B4 (URLs efêmeras do Deezer)
+
+> Decorrente da descoberta empírica de URLs Akamai HDN expirando em ~30min. Ver [`TECH_DEBT.md`](./TECH_DEBT.md) (entry "✅ RESOLVIDO — previewUrl efêmera") e [`ARCHITECTURE.md §5.4`](./ARCHITECTURE.md).
+
+- [ ] Função `preloadRoundQueue({ tracks, totalRounds })` em `apps/realtime/src/game/preload.ts`:
+  - Recebe N tracks selecionadas em E2 (metadata; `previewUrl` cacheado é ignorado).
+  - Dispara `GET https://api.deezer.com/track/{providerTrackId}` para cada, em paralelo, via token bucket 8 req/s (reutiliza o helper Deezer do provider — mesma classe usada no `seed.ts`).
+  - Extrai `.preview` (URL fresca) e monta entradas `{ trackId, freshPreviewUrl, title, artists, decade }`.
+  - Se algum track retorna sem preview (404 ou `preview === ""`): descarta, busca substituta no banco (re-invoca E2 com `count=1`, exclui IDs já na queue).
+- [ ] Antes do countdown: server emit `game:preparing` para o socket. UX no client: "Preparando partida...".
+- [ ] Fallback offline (`SOMS_OFFLINE=true`): pula refetch, usa `Track.previewUrl` cacheado mesmo morto, log warn. Para dev/CI.
+- [ ] Se Deezer up e **todas** as N tracks falham: emit `error: { code: 'DEEZER_UNAVAILABLE_FOR_START' }`. Sala volta para `LOBBY`.
+
+**Aceite:** teste de integração com fetch mockado — (a) 3 tracks no banco, 2 retornam preview válido + 1 vem sem preview → queue final tem 3 tracks (1 substituída via E2); (b) 0 retornam válidos → erro `DEEZER_UNAVAILABLE_FOR_START`.
 
 ---
 

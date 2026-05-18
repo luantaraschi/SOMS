@@ -374,6 +374,39 @@ O servidor de WS valida o JWT do cookie no `connect`. Mesma secret JWT que o Aut
 - Mostra ao host: "X músicas importadas, Y sem preview foram descartadas".
 - **Spotify fica de fora do MVP.** OAuth + scopes é trabalho não trivial; deixa pra fase 3.
 
+### 5.4 Frescor de URLs — Akamai HDN Token Auth — **Sprint 1** ✅
+
+**Problema:** as URLs de preview do Deezer (`https://cdnt-preview.dzcdn.net/...?hdnea=exp=<unix>~acl=...~hmac=...`) são assinadas via Akamai HDN Token Authentication com **expiração embutida** no parâmetro `exp`. TTL observado empiricamente: **~30 minutos**.
+
+Cachear `previewUrl` no Postgres por mais que o TTL = URL morre antes do uso. Validação 2026-05-18: 12 de 20 tracks (60%) retornaram HTTP 403 após 40min do cache.
+
+**Solução (Bloco B):** **re-fetch em batch no `room:start`**, antes do countdown.
+
+1. RoomManager seleciona N tracks do banco via `selectTracksForGame` (§5.2) — **metadata-only**, `previewUrl` ignorado.
+2. N requests paralelos: `GET https://api.deezer.com/track/{providerTrackId}`, sob token bucket 8 req/s.
+3. Para cada response, extrai `.preview` (URL fresca, ~30min TTL).
+4. Constrói queue em memória: `[{ trackId, freshPreviewUrl, title, artists, decade }, ...]`.
+5. Se algum track retorna sem `preview` (removido do Deezer): descarta, busca substituta no banco.
+6. Latência esperada: 300ms–2s para 3–10 rounds.
+
+**UX durante o pre-load:**
+
+- Server emite `game:preparing` → cliente mostra "Preparando partida..." (UX explica a espera).
+- Quando queue pronta: emit `game:countdown` (3, 2, 1) normalmente.
+- Se Deezer indisponível e TODAS tracks falham: erro `DEEZER_UNAVAILABLE_FOR_START`, fallback `SOMS_OFFLINE`-style (URLs cacheadas — quebradas, mas indica que a sala não está funcional pra dev).
+
+**`Track.previewUrl` no banco** continua existindo:
+
+- Populado pelo seed (last-known URL ao momento do seed).
+- Útil para debug e diagnóstico (`pnpm db:verify-cache`).
+- **NÃO usar em runtime de partida.** Schema vai ganhar comentário explícito.
+
+**Bonus:** essa estratégia também resolve "track removida do Deezer" — se `/track/{id}` retorna 404 ou sem `preview`, descartamos e buscamos substituta. Sem essa etapa, partida ficaria com round vazio.
+
+**Sprint 2+ (ISRC-first):** o pipeline proposto em [`SPRINT_2_PREVIEW.md`](./SPRINT_2_PREVIEW.md) já assume re-fetch a cada uso (via `/track/isrc:{ISRC}`), mantendo esse comportamento naturalmente.
+
+---
+
 ### Validação anti-vazio
 
 Antes de iniciar a partida, garantir que o número de tracks disponíveis ≥ `totalRounds`. Senão, bloquear start com mensagem clara.

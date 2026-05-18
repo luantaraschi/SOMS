@@ -87,6 +87,8 @@ Substituir full-text search atual por pipeline em camadas:
 
 Mesma arquitetura que **LavaSrc** usa em bots Discord ativos. Permite import de playlist Spotify/YouTube com alta precisão.
 
+> **Bônus:** pipeline ISRC-first resolve naturalmente o problema de URLs efêmeras documentado em [`ARCHITECTURE.md` §5.4](./ARCHITECTURE.md) — re-fetch via `/track/isrc:{ISRC}` retorna preview fresca toda vez. Implementação atual (Sprint 1, Bloco B5) usa `/track/{providerTrackId}` com mesmo efeito; trocar o endpoint quando ISRC entrar é praticamente um one-liner.
+
 **Hardcode também:** `data/top-world.json` e `data/top-br.json` com músicas pré-resolvidas:
 - **Mundial:** Billboard Greatest of All Time + kworb.net Spotify all-time
 - **Brasil:** Crowley Top 100 + Pro-Música Brasil

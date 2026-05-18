@@ -20,13 +20,12 @@ Lista curta de débitos técnicos conhecidos. Cada item tem: gatilho, ação, pr
 
 ---
 
-## Detecção de `previewUrl` mortas no cache Deezer
+## ✅ RESOLVIDO — `previewUrl` efêmera (Akamai HDN Token Auth)
 
-- **Onde:** todo `Track.previewUrl` cacheado em [`packages/db/prisma/schema.prisma`](../../packages/db/prisma/schema.prisma) (provider Deezer).
-- **Risco:** URLs de preview do Deezer podem caducar; partida iniciar com previews 404 quebra o `<audio>` no client e bloqueia o round.
-- **Gatilho:** primeiro relato de "som não tocou" em partida real.
-- **Ação proposta:** HEAD check em ~5% das tracks selecionadas por partida (sampling). Tracks com 404 marcadas para re-fetch via Deezer Provider. Possivelmente também job assíncrono periódico revalidando o cache inteiro.
-- **Por que adiar:** Sprint 1 não trata. Custo de implementar HEAD-check de antemão > custo provável do bug. Esperar evidência empírica.
+- **Resolução (Sprint 1, Bloco B):** re-fetch de `previewUrl` em batch no `room:start`, via `GET /track/{providerTrackId}` para cada track. Queue de rounds construída em memória. Ver [`ARCHITECTURE.md` §5.4](./ARCHITECTURE.md).
+- **`Track.previewUrl` no banco:** preservado como informativo (last-known URL). **NÃO usar em runtime de partida** — sempre re-buscar.
+- **Validação empírica (2026-05-18):** rodando `pnpm db:verify-cache` em 20 tracks após 40min do seed retornou 12/20 mortas (HTTP 403). Tokens `?hdnea=exp=<unix>~acl=...~hmac=...` (Akamai HDN) têm TTL ~30min.
+- **Note histórica:** entry original previa "esperar bug aparecer" e sampling HEAD-check. Evidência empírica em 1h promoveu de tech debt para decisão arquitetural Sprint 1.
 
 ---
 
