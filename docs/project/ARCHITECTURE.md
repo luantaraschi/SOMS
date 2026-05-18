@@ -202,7 +202,8 @@ model Track {
   previewUrl       String?
   duration         Int?     // segundos
   releaseYear      Int?
-  genres           String[]
+  genres           String[] // GenreKey[] de @soms/shared/genres — driver de busca/cache
+  deezerGenres     String[] @default([]) // gêneros da metadata Deezer (Sprint 2+)
   decade           Int?     // 2000, 2010, 2020...
   aliases          Json?    // { title: [...], artists: {...} } para matching
   createdAt        DateTime @default(now())
@@ -347,19 +348,26 @@ O servidor de WS valida o JWT do cookie no `connect`. Mesma secret JWT que o Aut
 
 ## 5. Fontes musicais (as 3 opções escolhidas)
 
-### 5.1 Pool curado
+### 5.1 Pool curado — **Sprint 2** *(revisão pós-A3 de Sprint 1)*
 
 - Você cadastra ~200 faixas via script de seed (`packages/db/seed.ts`).
 - Cada faixa entra como `Track` + relação com `TrackPool` (tags de gênero/década).
-- Source pra primeira semana de testes — controle total, sem risco de preview indisponível.
+- ⚠️ Em Sprint 1, o `seed.ts` ainda existe mas com **apenas 10 tracks** e papel reduzido a **fallback offline** quando o Deezer Provider estiver indisponível. Pool curado completo (~200 faixas) + modelo `TrackPool` entram em Sprint 2.
 
-### 5.2 Gênero/década com sorteio do Deezer
+### 5.2 Gênero/década com sorteio do Deezer — **Sprint 1** ✅
 
-- Host escolhe `{ genres: ["funk", "pop"], decades: [2010, 2020] }`.
+- Host escolhe `{ genres: ["funk", "pop"], decades: [2010, 2020] }` (defaults permissivos: todos selecionados).
 - Servidor consulta Deezer search com query construída, filtra por preview disponível, sorteia N faixas.
 - Cacheia em `Track` (provider="deezer") na primeira aparição → próxima vez não chama a API.
+- **Tags de gênero ao cachear:**
+  - `Track.genres`: array com a `GenreKey` usada na busca (ex: `["funk"]`); o `selectTracksForGame` consulta esse campo.
+  - `Track.deezerGenres`: gêneros que a metadata do Deezer reporta para a track (resolvido via `genre_id`). Pode ser vazio. Não usado em Sprint 1; reservado para matching avançado em Sprint 2.
+- **Rotação por slot:** quando `settings.trackSource.genres` tem múltiplos valores, `selectTracksForGame` sorteia 1 gênero por slot de track. Evita que "todos os gêneros" colapse em só pop.
+- **Filtro de década (estratégia C):** ao mapear a track no provider, derivar `decade = floor(year / 10) * 10` do `release_date`. Filtrar `decade ∈ settings.trackSource.decades` antes do upsert.
+- **Rate limit:** API pública Deezer ≈ 50 req / 5s por IP. Provider implementa token bucket simples (max 8 req/s, fila FIFO) para nunca disparar 429.
+- **Modo offline (`SOMS_OFFLINE=true`, ver §10):** pula chamada Deezer e usa só cache. Se cache `< totalRounds`, erro `INSUFFICIENT_TRACKS` com mensagem específica.
 
-### 5.3 Link de playlist
+### 5.3 Link de playlist — **Sprint 2**
 
 - Host cola URL de playlist Deezer (formato `https://www.deezer.com/playlist/123`).
 - Worker chama Deezer API, importa tracks com preview disponível, cria `ImportedPlaylist` + `PlaylistTrack`.
@@ -390,6 +398,9 @@ Todos os eventos tipados em `packages/shared/src/events.ts`. Cliente e servidor 
 | `game:ready_next` | — | host, status=REVEAL |
 | `game:end` | — | host, qualquer hora |
 
+> **Sprint 1 (revisado pós-A3) implementa:** `room:create`, `room:join`, `room:leave`, `room:settings:update`, `room:start`, `game:guess`, `game:ready_next`.
+> **Fora do Sprint 1:** `room:kick` (Sprint 2), `game:end` (Sprint 2). Promoção de `room:settings:update` para Sprint 1 é decorrente do Provider Deezer entrar (host precisa selecionar gêneros/décadas no lobby).
+
 ### Servidor → Cliente
 
 | Evento | Payload |
@@ -407,6 +418,9 @@ Todos os eventos tipados em `packages/shared/src/events.ts`. Cliente e servidor 
 | `game:scores` | `{ ranking: [{userId, total}] }` |
 | `game:ended` | `{ podium, stats, achievementsUnlocked, cards }` |
 | `error` | `{ code, message }` |
+
+> **Sprint 1 (revisado pós-A3) implementa:** `room:joined`, `room:player:joined`, `room:player:left`, `room:host:changed`, `room:settings:updated` (novo), `game:countdown`, `game:round:started`, `game:guess:result`, `game:round:reveal`, `game:ended`, `error`.
+> **Fora do Sprint 1:** `game:scores` (placar entre rounds — Sprint 1 só emite score no `round:reveal`).
 
 \* `payload` varia por modo:
 - CLASSIC / BLIND_TEST / CHAOS: `{ previewUrl, startAt }`
@@ -596,6 +610,7 @@ PORT=8080
 WEB_ORIGIN=https://soms.app          # CORS
 DEEZER_API_BASE=https://api.deezer.com
 MUSICBRAINZ_USER_AGENT=SOMS/0.1 (contato@soms.app)
+SOMS_OFFLINE=false                    # Sprint 1: quando true, selectTracksForGame() pula Deezer e usa só cache local
 ```
 
 ---

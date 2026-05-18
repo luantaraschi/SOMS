@@ -129,7 +129,8 @@ model Track {
   previewUrl      String?
   duration        Int? // segundos
   releaseYear     Int?
-  genres          String[]
+  genres          String[] // keys do GENRES map em @soms/shared — chave de busca/cache
+  deezerGenres    String[] @default([]) // gêneros da metadata Deezer (genre_id resolvido); Sprint 2+
   decade          Int? // 2000, 2010, 2020...
   aliases         Json? // { title: [...], artists: {...} } — Sprint 2+
   createdAt       DateTime @default(now())
