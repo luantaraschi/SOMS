@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "@soms/deezer": "workspace:*",
     "@soms/shared": "workspace:*"
   },
   "devDependencies": {

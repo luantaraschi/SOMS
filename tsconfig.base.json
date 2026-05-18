@@ -20,6 +20,8 @@
     "paths": {
       "@soms/db": ["./packages/db/src/index.ts"],
       "@soms/db/*": ["./packages/db/src/*"],
+      "@soms/deezer": ["./packages/deezer/src/index.ts"],
+      "@soms/deezer/*": ["./packages/deezer/src/*"],
       "@soms/shared": ["./packages/shared/src/index.ts"],
       "@soms/shared/*": ["./packages/shared/src/*"],
       "@soms/design-system/*": ["./packages/design-system/*"]
