@@ -27,3 +27,23 @@ Lista curta de débitos técnicos conhecidos. Cada item tem: gatilho, ação, pr
 - **Gatilho:** primeiro relato de "som não tocou" em partida real.
 - **Ação proposta:** HEAD check em ~5% das tracks selecionadas por partida (sampling). Tracks com 404 marcadas para re-fetch via Deezer Provider. Possivelmente também job assíncrono periódico revalidando o cache inteiro.
 - **Por que adiar:** Sprint 1 não trata. Custo de implementar HEAD-check de antemão > custo provável do bug. Esperar evidência empírica.
+
+---
+
+## Refinar `deezerQuery` de gêneros borderline (Sprint 1 → futuro)
+
+- **Onde:** [`packages/shared/src/genres.ts`](../../packages/shared/src/genres.ts)
+- **Sintomas observados em 2026-05-18:**
+  - `rock` retorna tracks com "rock" no título mas que não são rock canon (Post Malone "rockstar", MJ "Rock with You").
+  - `pagode` retorna Felipe Araújo (mais sertanejo do que pagode).
+- **Decisão:** aceitar pro MVP — tracks reconhecíveis o suficiente para o loop básico do jogo, não vale afinar mais agora.
+- **Ação futura:** considerar Deezer genre IDs ou pipeline ISRC-first proposto em [`SPRINT_2_PREVIEW.md`](./SPRINT_2_PREVIEW.md) (seção "Refatoração do provider Deezer").
+
+---
+
+## `deezerSearchMulti` prioriza o 1º artista de cada array
+
+- **Onde:** [`packages/db/seed.ts`](../../packages/db/seed.ts) → `deezerSearchMulti()` + loop em `seedGenre()`.
+- **Sintoma:** `Promise.all` preserva ordem do array, dedup só por `track.id`, loop quebra ao atingir `TRACKS_PER_GENRE`. Resultado: hip-hop pegou 2x Racionais, indie pegou 2x Arctic Monkeys, etc. — sempre o 1º artista da lista.
+- **Decisão:** funcional para MVP, tracks são canônicas dos artistas-âncora. Aceito.
+- **Ação futura:** quando o pool crescer ou virar provider real em E1 (Sprint 2), considerar **round-robin entre buckets** (pegar 1 de cada artista alternadamente) em vez de concat ordenado. Aumenta variedade sem custo extra de request.

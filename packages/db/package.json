@@ -12,7 +12,8 @@
     "db:seed": "tsx seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0"
+    "@prisma/client": "^6.0.0",
+    "@soms/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

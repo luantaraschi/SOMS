@@ -14,7 +14,13 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d && pnpm db:migrate",
+    "db:migrate": "pnpm --filter @soms/db exec prisma migrate dev",
+    "db:seed": "pnpm --filter @soms/db exec prisma db seed",
+    "db:studio": "pnpm --filter @soms/db exec prisma studio"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

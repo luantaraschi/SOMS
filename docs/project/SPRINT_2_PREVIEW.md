@@ -6,6 +6,12 @@
 
 ## O que entra na Sprint 2
 
+### Refinamentos do Provider Deezer
+
+- **Migrar de full-text search para Deezer genre IDs.** Sprint 1 usa `?q=<string>` em [`packages/shared/src/genres.ts`](../../packages/shared/src/genres.ts) com estratégia de artistas-âncora — funciona mas é frágil (artistas saem do catálogo, mainstream muda). Deezer expõe `/genre` retornando IDs estáveis e `/search?genre_id=X` filtra por gênero canônico.
+  - Trabalho: mapear `GenreKey` → Deezer genre ID, atualizar provider para usar `genre_id`, manter `deezerQuery` como fallback se ID retornar pouco.
+  - Por que não fazer em Sprint 1: 1 call extra por gênero (resolver ID), e a estratégia de artistas-âncora já funciona pro MVP.
+
 ### Catálogo musical avançado
 
 - **Pool curado de ~200 faixas** com categorização por gênero, década e tags livres
@@ -68,6 +74,24 @@
 
 - Confirmar credenciais Deezer (App ID/Secret) e MusicBrainz User-Agent em `.env.example`
 - Documentar rate-limits e estratégia de backoff em ARCHITECTURE
+
+---
+
+## Refatoração do provider Deezer (Sprint 2+)
+
+Substituir full-text search atual por pipeline em camadas:
+
+1. **ISRC-first:** Spotify Web API → `external_ids.isrc` → `GET https://api.deezer.com/track/isrc:<ISRC>`. Resolução determinística entre catálogos.
+2. **Songlink/Odesli fallback:** `api.song.link` (10 req/min sem chave, 60 com chave grátis). Cross-platform.
+3. **Fuzzy search atual como último fallback.**
+
+Mesma arquitetura que **LavaSrc** usa em bots Discord ativos. Permite import de playlist Spotify/YouTube com alta precisão.
+
+**Hardcode também:** `data/top-world.json` e `data/top-br.json` com músicas pré-resolvidas:
+- **Mundial:** Billboard Greatest of All Time + kworb.net Spotify all-time
+- **Brasil:** Crowley Top 100 + Pro-Música Brasil
+
+> Esta seção supera "Refinamentos do Provider Deezer" (genre IDs) acima — manter aquela como _stepping stone_ menor; ISRC-first é a refatoração robusta.
 
 ---
 
