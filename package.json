@@ -20,7 +20,8 @@
     "db:reset": "docker compose down -v && docker compose up -d && pnpm db:migrate",
     "db:migrate": "pnpm --filter @soms/db exec prisma migrate dev",
     "db:seed": "pnpm --filter @soms/db exec prisma db seed",
-    "db:studio": "pnpm --filter @soms/db exec prisma studio"
+    "db:studio": "pnpm --filter @soms/db exec prisma studio",
+    "db:verify-cache": "pnpm --filter @soms/db exec tsx scripts/verify-cache-health.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

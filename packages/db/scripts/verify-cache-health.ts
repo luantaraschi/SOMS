@@ -1,10 +1,18 @@
-// Utility script: HEAD em todos os Track.previewUrl do banco.
+// Diagnóstico: HEAD em todos os Track.previewUrl cacheados.
 //
-// Uso: pnpm --filter @soms/db exec tsx scripts/check-previews.ts
+// Uso:
+//   pnpm db:verify-cache
+//   (ou: pnpm --filter @soms/db exec tsx scripts/verify-cache-health.ts)
 //
-// Sprint 1: rodado ad-hoc pra confirmar saúde do cache. Sprint 2+ pode virar
-// job periódico no apps/realtime (ver TECH_DEBT.md — "Detecção de previewUrl
-// mortas no cache Deezer").
+// Sprint 1: as URLs Deezer expiram em ~30min (Akamai HDN). Resultado deste
+// script é esperado degradar com o tempo — depois de ~1h do seed, 60-80% das
+// URLs retornam HTTP 403. Isso é normal. O game loop (Bloco B / B5) re-fetcha
+// URLs frescas no room:start, então o cache aqui é informativo, não authoritative.
+//
+// Use para: validar conectividade Deezer, debugar reports de "som não tocou",
+// comparar cache-vs-runtime fresh-fetch.
+//
+// Ver ARCHITECTURE.md §5.4 e TECH_DEBT.md ("✅ RESOLVIDO — previewUrl efêmera").
 
 import { prisma } from '../src/index.js';
 
@@ -32,7 +40,7 @@ async function main(): Promise<void> {
     select: { id: true, title: true, artists: true, previewUrl: true },
   });
 
-  console.log(`[check-previews] checking ${tracks.length} tracks (HEAD, timeout=${HEAD_TIMEOUT_MS}ms)...`);
+  console.log(`[verify-cache] checking ${tracks.length} tracks (HEAD, timeout=${HEAD_TIMEOUT_MS}ms)...`);
 
   let alive = 0;
   const dead: DeadEntry[] = [];
@@ -51,9 +59,9 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n[check-previews] ${alive}/${tracks.length} alive`);
+  console.log(`\n[verify-cache] ${alive}/${tracks.length} alive`);
   if (dead.length > 0) {
-    console.log(`[check-previews] dead tracks (${dead.length}):`);
+    console.log(`[verify-cache] dead tracks (${dead.length}):`);
     for (const d of dead) {
       console.log(`  ✗ ${d.title} — ${d.artist} [${d.detail}]`);
     }
@@ -65,7 +73,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e: unknown) => {
-    console.error('[check-previews] FAILED:', e);
+    console.error('[verify-cache] FAILED:', e);
     await prisma.$disconnect();
     process.exit(1);
   });
