@@ -1,0 +1,168 @@
+// ============================================================
+//  @soms/db — Sprint 1 schema enxuto
+//
+//  Inclui apenas os 6 modelos necessários para o loop principal:
+//    User, Room, Game, Round, Track, Guess
+//
+//  EXPLICITAMENTE OMITIDO (Sprint 2+):
+//    - Auth.js: Account, Session, VerificationToken
+//    - Conquistas: Achievement, UserAchievement
+//    - Cosméticos: Cosmetic, UserCosmetic
+//    - Playlists: TrackPool, ImportedPlaylist, PlaylistTrack
+//
+//  Relações para essas tabelas foram removidas dos modelos do MVP.
+//  Quando entrarem, adicionar via migração nova.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----- USERS ------------------------------------------------
+
+model User {
+  id         String   @id @default(cuid())
+  nickname   String
+  avatar     String?
+  isGuest    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+
+  hostedRooms Room[]  @relation("RoomHost")
+  guesses     Guess[]
+}
+
+// ----- ROOMS ------------------------------------------------
+
+model Room {
+  id        String     @id @default(cuid())
+  code      String     @unique // 6 chars, ex: "ABCD12"
+  hostId    String
+  host      User       @relation("RoomHost", fields: [hostId], references: [id])
+  mode      RoomMode
+  status    RoomStatus @default(LOBBY)
+  settings  Json
+  createdAt DateTime   @default(now())
+  closedAt  DateTime?
+
+  games Game[]
+
+  @@index([code])
+  @@index([status])
+}
+
+enum RoomMode {
+  CLASSIC // único usado no Sprint 1
+  BLIND_TEST // Sprint 2+
+  WHO_SANG // Sprint 2+
+  PLAYLIST_WARS // pós-MVP
+  COVER_REVEAL // pós-MVP
+  CHAOS // preset = CLASSIC + chaos rules, pós-MVP
+}
+
+enum RoomStatus {
+  LOBBY
+  PLAYING
+  ENDED
+  CLOSED
+}
+
+// ----- GAMES & ROUNDS ---------------------------------------
+
+model Game {
+  id           String     @id @default(cuid())
+  roomId       String
+  room         Room       @relation(fields: [roomId], references: [id])
+  mode         RoomMode
+  totalRounds  Int
+  currentRound Int        @default(0)
+  status       GameStatus @default(WAITING)
+  startedAt    DateTime?
+  endedAt      DateTime?
+  finalStats   Json? // estatísticas engraçadas (Sprint 2+); null no Sprint 1
+
+  rounds Round[]
+
+  @@index([roomId])
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  ENDED
+}
+
+model Round {
+  id              String    @id @default(cuid())
+  gameId          String
+  game            Game      @relation(fields: [gameId], references: [id])
+  index           Int // 1..N
+  trackId         String
+  track           Track     @relation(fields: [trackId], references: [id])
+  mode            RoomMode
+  specialRule     String? // null no Sprint 1
+  durationSeconds Int
+  startedAt       DateTime?
+  endedAt         DateTime?
+
+  guesses Guess[]
+
+  @@index([gameId])
+}
+
+// ----- TRACKS -----------------------------------------------
+
+model Track {
+  id              String   @id @default(cuid())
+  provider        String // "deezer" | "musicbrainz" (apenas "deezer" no Sprint 1)
+  providerTrackId String
+  title           String
+  artists         String[]
+  feats           String[]
+  album           String?
+  coverUrl        String?
+  previewUrl      String?
+  duration        Int? // segundos
+  releaseYear     Int?
+  genres          String[]
+  decade          Int? // 2000, 2010, 2020...
+  aliases         Json? // { title: [...], artists: {...} } — Sprint 2+
+  createdAt       DateTime @default(now())
+
+  rounds Round[]
+
+  @@unique([provider, providerTrackId])
+  @@index([decade])
+}
+
+// ----- GUESSES ----------------------------------------------
+
+model Guess {
+  id             String      @id @default(cuid())
+  roundId        String
+  round          Round       @relation(fields: [roundId], references: [id])
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  rawText        String
+  normalizedText String
+  result         GuessResult
+  matchedField   String? // "title" | "artist" | "feat" | null
+  score          Int         @default(0)
+  responseTime   Int // ms desde início do round
+  submittedAt    DateTime    @default(now())
+
+  @@index([roundId])
+  @@index([userId])
+}
+
+enum GuessResult {
+  CORRECT
+  CLOSE // não usado no Sprint 1 (sem Levenshtein); reservado para Sprint 2
+  WRONG
+  RATE_LIMITED
+}

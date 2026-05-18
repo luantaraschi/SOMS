@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
