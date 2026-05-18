@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .chip {
+    border: 3px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 0 var(--shadow-color);
+    padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--font-display); font-weight: 800; text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+  .lbl { font-size: 14px; }
+  .desc { font-family: var(--font-body); font-weight: 500; text-transform: none; font-size: 12px; opacity: 0.75; letter-spacing: 0; }
+</style>
+</head><body>
+<div class="card">
+  <div class="grid">
+    <div class="chip" style="background:#B8FF1A; color:#0A0A0A">
+      <span class="lbl">Acertou!</span>
+      <span class="desc">Success</span>
+    </div>
+    <div class="chip" style="background:#FF9F1C; color:#0A0A0A">
+      <span class="lbl">Quase</span>
+      <span class="desc">Warm</span>
+    </div>
+    <div class="chip" style="background:#FF4D4D; color:#FFFFFF">
+      <span class="lbl">Errou</span>
+      <span class="desc">Danger</span>
+    </div>
+    <div class="chip" style="background:#00E5FF; color:#0A0A0A">
+      <span class="lbl">00:08</span>
+      <span class="desc">Info</span>
+    </div>
+    <div class="chip" style="background:#A78BFA; color:#FFFFFF">
+      <span class="lbl">Host</span>
+      <span class="desc">Special</span>
+    </div>
+    <div class="chip" style="background:#FFE600; color:#0A0A0A">
+      <span class="lbl">Criar Sala</span>
+      <span class="desc">Primary</span>
+    </div>
+  </div>
+</div>
+</body></html>

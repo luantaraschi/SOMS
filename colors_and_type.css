@@ -1,0 +1,347 @@
+/* =============================================================
+   SOMS — Colors & Type
+   Neobrutalism com pulso musical/festivo.
+   Light-first. Mobile-first. Tudo é tangível.
+   ============================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap");
+
+:root {
+  /* ----------------------------------------------------------
+     COLORS — semantic, never decorative
+     ---------------------------------------------------------- */
+  --bg:        #FFFCF2;  /* off-white quente, vibe papel */
+  --ink-base:  #0A0A0A;  /* THEME-AWARE base for text/borders. Always reflects current theme. */
+  --ink-soft-base: #3D3D3D;
+  --ink:       var(--ink-base);   /* The "active" ink — may be re-scoped by container */
+  --ink-soft:  var(--ink-soft-base);
+  --surface:   #FFFFFF;  /* cards, modais, elementos elevados */
+  --surface-2: #F4F1E6;  /* surface mais quente, hover/elev superior */
+
+  --primary:   #FFE600;  /* CTA principal, "luz de palco" */
+  --secondary: #FF3D7F;  /* CTA secundário, momentos importantes */
+  --success:   #B8FF1A;  /* acerto, posição #1, feedback positivo */
+  --warm:      #FF9F1C;  /* "quase", posição #2, hint */
+  --info:      #00E5FF;  /* contagem regressiva, timer, info neutra */
+  --special:   #A78BFA;  /* host, badges raros, regras caóticas */
+  --danger:    #FF4D4D;  /* erro, kick, encerrar sala */
+
+  /* Texto sobre cada cor (regra: contrast first) */
+  --on-primary:   var(--ink);
+  --on-secondary: #FFFFFF;
+  --on-success:   var(--ink);
+  --on-warm:      var(--ink);
+  --on-info:      var(--ink);
+  --on-special:   #FFFFFF;
+  --on-danger:    #FFFFFF;
+
+  /* SHADOW COLOR — em light mode é o próprio ink (preto). */
+  --shadow-color: var(--ink);
+
+  /* ----------------------------------------------------------
+     RADII — never 0 (vira retrô em vez de moderno)
+     ---------------------------------------------------------- */
+  --radius-sm: 8px;   /* inputs pequenos, chips, badges */
+  --radius-md: 12px;  /* botões, cards de feedback */
+  --radius-lg: 16px;  /* cards de player, cards do lobby */
+  --radius-xl: 24px;  /* modais, telas hero, room code */
+
+  /* ----------------------------------------------------------
+     BORDERS — sempre pretas, sempre grossas
+     ---------------------------------------------------------- */
+  --border-w: 3px;     /* elementos interativos */
+  --border-hero: 4px;  /* elementos hero (room code, pódio, modal)*/
+
+  /* ----------------------------------------------------------
+     SHADOWS — hard, deslocadas, ZERO blur
+     "Xpx Xpx 0 0 black". Se você vê blur, está errado.
+     ---------------------------------------------------------- */
+  --shadow-sm: 3px 3px 0 0 var(--shadow-color);
+  --shadow-md: 6px 6px 0 0 var(--shadow-color);
+  --shadow-lg: 8px 8px 0 0 var(--shadow-color);
+  --shadow-xl: 12px 12px 0 0 var(--shadow-color);
+
+  /* Pressed state shadows (afundamento) */
+  --shadow-md-press: 3px 3px 0 0 var(--shadow-color);
+  --shadow-lg-press: 4px 4px 0 0 var(--shadow-color);
+
+  /* ----------------------------------------------------------
+     SPACING — base 4. Favor 8, 16, 24, 32, 48, 64.
+     ---------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Card inner padding, section breathing room */
+  --pad-card: 24px;
+  --gap-section: 48px;
+
+  /* ----------------------------------------------------------
+     TYPOGRAPHY — three families. Nothing else.
+     ---------------------------------------------------------- */
+  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Display scale — responsive, mobile → desktop */
+  --text-mega:    clamp(64px, 8vw, 96px);   /* score gigante, room code hero */
+  --text-display: clamp(48px, 6vw, 72px);   /* "VOCÊ ACERTOU!", título de fim */
+  --text-h1:      clamp(32px, 4vw, 48px);
+  --text-h2:      clamp(24px, 3vw, 32px);
+  --text-h3:      clamp(20px, 2.2vw, 24px);
+  --text-lg:      18px;
+  --text-base:    16px;
+  --text-sm:      14px;
+  --text-xs:      12px;
+
+  /* Touch target floor (mobile-first) */
+  --tap-min: 48px;
+}
+
+/* ==============================================================
+   SEMANTIC TYPE — drop-in classes for canonical text styles
+   Display sempre uppercase + tracking-tight em CTAs/badges/scores.
+   ============================================================== */
+
+.t-mega {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-mega);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-display);
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.t-h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.t-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-h2);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.t-h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-h3);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.t-lg {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+.t-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.t-caption {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.t-slogan {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--text-lg);
+  color: var(--ink-soft);
+}
+
+/* Numerals on scores — always tabular */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ==============================================================
+   DARK MODE — palco iluminado à noite
+   "As cores vibrantes são as luzes do palco — devem brilhar.
+    O fundo é o teatro, o ink são as marcas do cenário,
+    e as sombras coloridas são o rastro de neon."
+
+   Liga via `<html data-theme="dark">` (ou em qualquer ancestral).
+   ============================================================== */
+[data-theme="dark"] {
+  /* TEATRO: fundo profundo, levemente arroxeado — não preto puro. */
+  --bg:        #110A1F;  /* deep theater */
+  --surface:   #1E1432;  /* primeira elevação (cards) */
+  --surface-2: #2A1E4A;  /* segunda elevação (hover, modais) */
+
+  /* INK invertido: cream warm pra texto E bordas (mesmo do --bg light). */
+  --ink-base:  #FFFCF2;
+  --ink-soft-base: #C8BDD9;
+  /* --ink and --ink-soft re-inherit from --ink-base via :root rule */
+
+  /* CORES DE PALCO: levemente dessaturadas pra não queimar a retina,
+     mas mantendo o tom. */
+  --primary:   #FFD60A;  /* amarelo refletor, +laranja */
+  --secondary: #FF5C9A;  /* rosa neon mais legível em dark */
+  --success:   #B8FF1A;  /* lima — pop intenso */
+  --warm:      #FFB347;
+  --info:      #00E5FF;
+  --special:   #BFA5FF;  /* lavanda mais clara, lê melhor sobre purple-black */
+  --danger:    #FF7070;
+
+  /* Texto sobre cor: dark mode mantém preto sobre amarelos/limas/cyan,
+     branco/cream sobre os escuros. Inalterado em sua maioria. */
+  --on-primary:   #0A0A0A;
+  --on-secondary: #FFFFFF;
+  --on-success:   #0A0A0A;
+  --on-warm:      #0A0A0A;
+  --on-info:      #0A0A0A;
+  --on-special:   #0A0A0A;
+  --on-danger:    #FFFFFF;
+
+  /* RASTRO DE NEON: a sombra deixa de ser preto e vira rosa choque.
+     Esse é o detalhe principal da assinatura visual dark. */
+  --shadow-color: #FF3D7F;
+}
+
+/* ==============================================================
+   INK SCOPE RULES
+   These determine what `var(--ink)` resolves to inside a container,
+   based on what's painted behind. In dark mode this is critical for
+   keeping black text on yellow/lime and cream text on dark surfaces.
+   ============================================================== */
+
+/* On LIGHT brand backgrounds (primary/success/warm/info) or .on-light:
+   force ink to dark values regardless of theme. */
+[style*="var(--primary)"][style*="background"],
+[style*="var(--success)"][style*="background"],
+[style*="var(--warm)"][style*="background"],
+[style*="var(--info)"][style*="background"],
+.on-light,
+.sm-btn--primary,
+.sm-btn--success,
+.nav-btn.active {
+  --ink: #0A0A0A;
+  --ink-soft: #3D3D3D;
+  color: var(--ink);
+}
+
+/* On NEUTRAL backgrounds (surface/bg) or .on-dark:
+   restore ink to the current theme's base (which is cream in dark).
+   This catches inner cards nested inside light brand parents. */
+[style*="var(--surface)"][style*="background"],
+[style*="var(--bg)"][style*="background"],
+.on-dark,
+.sm-card,
+.sm-badge,
+.sm-input {
+  --ink: var(--ink-base);
+  --ink-soft: var(--ink-soft-base);
+  color: var(--ink);
+}
+
+/* Special-cased SmBadge variants — their bg is set by class so the
+   inline attribute selectors above don't fire. Re-apply ink scoping
+   per variant. */
+.sm-badge--host    { --ink: #FFFFFF; --ink-soft: #FFFFFF; color: var(--ink); }
+.sm-badge--special { --ink: #0A0A0A; --ink-soft: #3D3D3D; color: var(--ink); }  /* primary bg */
+.sm-badge--info    { --ink: #0A0A0A; --ink-soft: #3D3D3D; color: var(--ink); }
+.sm-badge--warm    { --ink: #0A0A0A; --ink-soft: #3D3D3D; color: var(--ink); }
+
+/* ==============================================================
+   CHROMATIC SHADOWS — dark mode only
+   In light mode, all shadows are black. In dark, each surface
+   leaves a different neon trail — chromatic aberration that feels
+   like stage lighting.
+   ============================================================== */
+[data-theme="dark"] [style*="var(--primary)"][style*="background"],
+[data-theme="dark"] .sm-btn--primary,
+[data-theme="dark"] .nav-btn.active {
+  --shadow-color: #00E5FF;  /* yellow plate → cyan trail */
+}
+[data-theme="dark"] [style*="var(--secondary)"][style*="background"] {
+  --shadow-color: #FFD60A;  /* pink plate → yellow trail */
+}
+[data-theme="dark"] [style*="var(--success)"][style*="background"],
+[data-theme="dark"] .sm-btn--success {
+  --shadow-color: #FF5C9A;  /* lime plate → pink trail */
+}
+[data-theme="dark"] [style*="var(--info)"][style*="background"] {
+  --shadow-color: #FF5C9A;  /* cyan plate → pink trail */
+}
+[data-theme="dark"] [style*="var(--warm)"][style*="background"] {
+  --shadow-color: #BFA5FF;  /* orange plate → lavender trail */
+}
+[data-theme="dark"] [style*="var(--special)"][style*="background"] {
+  --shadow-color: #FFD60A;  /* purple plate → yellow trail */
+}
+/* Default neutral surfaces keep the pink neon signature */
+[data-theme="dark"] [style*="var(--surface)"][style*="background"],
+[data-theme="dark"] [style*="var(--bg)"][style*="background"],
+[data-theme="dark"] .sm-card,
+[data-theme="dark"] .on-dark {
+  --shadow-color: #FF3D7F;
+}
+
+/* Selection no dark fica rosa (não amarela) pra combinar */
+[data-theme="dark"] ::selection {
+  background: var(--secondary);
+  color: #fff;
+}
+
+/* Padrão de bolinhas no bg dark — ainda mais sutis */
+[data-theme="dark"] body.dotted,
+[data-theme="dark"] .paper,
+[data-theme="dark"] .sm-flat-bg {
+  background-color: var(--bg);
+}
+
+/* ==============================================================
+   PAGE BASELINES
+   ============================================================== */
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--ink);
+}

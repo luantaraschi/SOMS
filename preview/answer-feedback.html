@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .ans {
+    display:flex; align-items:center; gap: 12px;
+    border: 3px solid var(--ink); border-radius: 12px;
+    padding: 10px 14px;
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    box-shadow: 4px 4px 0 0 var(--shadow-color);
+  }
+  .ans .who { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; }
+  .ans .delta { margin-left:auto; font-family: var(--font-mono); font-weight: 700; font-size: 14px; }
+  .stack { display:flex; flex-direction:column; gap: 12px; }
+</style>
+</head><body>
+<div class="card" style="padding: 22px 32px;">
+  <div class="stack">
+    <div class="ans" style="background: var(--success); transform: rotate(-0.5deg);">
+      <span class="who">memi:</span> <span>locked out of heaven</span>
+      <span class="delta">+130</span>
+    </div>
+    <div class="ans" style="background: var(--warm); transform: rotate(0.6deg);">
+      <span class="who">luan:</span> <span>locked out heven</span>
+      <span class="delta">quase</span>
+    </div>
+    <div class="ans" style="background: var(--surface); transform: rotate(-0.3deg);">
+      <span class="who">ana:</span> <span>drake</span>
+      <span class="delta" style="color: var(--ink-soft)">errou</span>
+    </div>
+  </div>
+</div>
+</body></html>

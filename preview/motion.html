@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  body { overflow: hidden; }
+  .stage { padding: 22px 32px; display:flex; gap: 22px; align-items:center; }
+  .demo {
+    width: 130px; height: 86px;
+    border: 3px solid var(--ink); border-radius: 12px;
+    box-shadow: 6px 6px 0 0 var(--shadow-color);
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase;
+  }
+  .lbl { font-family: var(--font-body); font-weight: 700; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-top:6px; text-align:center; }
+
+  @keyframes hover-push { 0%, 100% { transform: translate(0,0); box-shadow: 6px 6px 0 0 var(--shadow-color); } 50% { transform: translate(3px,3px); box-shadow: 3px 3px 0 0 var(--shadow-color); } }
+  @keyframes tap-press { 0%, 100% { transform: translate(0,0); box-shadow: 6px 6px 0 0 var(--shadow-color); } 50% { transform: translate(6px,6px); box-shadow: 0 0 0 0 var(--shadow-color); } }
+  @keyframes hit-pop  { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.2) rotate(-4deg); } }
+  @keyframes err-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+
+  .a-hover { background: var(--primary); animation: hover-push 1.6s ease-in-out infinite; }
+  .a-tap   { background: var(--success); animation: tap-press 1.4s ease-in-out infinite; }
+  .a-hit   { background: var(--success); animation: hit-pop 1.4s ease-out infinite; }
+  .a-err   { background: var(--danger); color:#fff; animation: err-shake 0.8s ease-in-out infinite; }
+</style>
+</head><body>
+<div class="card stage">
+  <div>
+    <div class="demo a-hover">Hover</div>
+    <div class="lbl">x+3 y+3</div>
+  </div>
+  <div>
+    <div class="demo a-tap">Tap</div>
+    <div class="lbl">x+6 y+6 shadow 0</div>
+  </div>
+  <div>
+    <div class="demo a-hit">Acertou</div>
+    <div class="lbl">scale + rotate</div>
+  </div>
+  <div>
+    <div class="demo a-err">Errou</div>
+    <div class="lbl">shake -8 / +8</div>
+  </div>
+</div>
+</body></html>

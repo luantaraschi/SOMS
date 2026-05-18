@@ -1,0 +1,45 @@
+/* Preview card shell — used by all design system preview/*.html cards.
+   Each card targets ~700×variable. Renders OUTSIDE a title (asset name is shown elsewhere).
+*/
+@import url("../colors_and_type.css");
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+.card {
+  width: 700px;
+  padding: 32px;
+  position: relative;
+}
+
+.card.tight { padding: 24px; }
+.card.snug  { padding: 20px 24px; }
+
+/* Small dotted-paper texture available if needed */
+.paper {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, #0a0a0a22 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Generic neobrutalism box */
+.nb {
+  background: var(--surface);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Row of items with consistent gap */
+.row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.between { display: flex; justify-content: space-between; align-items: center; }
+.grow { flex: 1; }

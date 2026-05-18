@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .col { display:flex; flex-direction:column; gap: 14px; }
+  .field { display:flex; flex-direction:column; gap: 6px; }
+  .label { font-family: var(--font-display); font-weight:800; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+  .input {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 0 var(--shadow-color);
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink);
+    outline: none;
+  }
+  .input::placeholder { color: var(--ink-soft); }
+  .input.focused {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 var(--shadow-color);
+  }
+</style>
+</head><body>
+<div class="card" style="padding: 28px 32px;">
+  <div class="col">
+    <div class="field">
+      <div class="label">Seu apelido</div>
+      <input class="input" value="memi"/>
+    </div>
+    <div class="field">
+      <div class="label">Código da sala</div>
+      <input class="input focused" placeholder="ABCD12" value="ABCD12" style="font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;"/>
+    </div>
+  </div>
+</div>
+</body></html>

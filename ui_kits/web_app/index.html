@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>SOMS — UI Kit</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:," />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    .app-shell {
+      background-color: var(--bg);
+      background-image: radial-gradient(circle, color-mix(in oklab, var(--ink) 10%, transparent) 1px, transparent 1px);
+      background-size: 22px 22px;
+      color: var(--ink);
+      min-height: 100vh;
+      transition: background-color 220ms ease, color 220ms ease;
+    }
+    .stage {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    .nav {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+      align-items: center;
+    }
+    .theme-toggle {
+      margin-left: 4px;
+      padding: 10px 14px;
+      min-height: 42px;
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    .theme-toggle:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 var(--shadow-color); }
+    [data-theme="dark"] .theme-toggle { background: var(--surface); }
+    .nav-btn {
+      padding: 10px 16px;
+      min-height: 42px;
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    .nav-btn:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 0 var(--shadow-color); }
+    .nav-btn.active { background: var(--primary); color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="Primitives.jsx"></script>
+  <script type="text/babel" src="HomeScreen.jsx"></script>
+  <script type="text/babel" src="LobbyScreen.jsx"></script>
+  <script type="text/babel" src="GameScreen.jsx"></script>
+  <script type="text/babel" src="RevealScreen.jsx"></script>
+  <script type="text/babel" src="EndScreen.jsx"></script>
+  <script type="text/babel" src="ShareCard.jsx"></script>
+  <script type="text/babel" src="ErrorEmptyScreen.jsx"></script>
+  <script type="text/babel" src="AuthScreen.jsx"></script>
+  <script type="text/babel" src="SettingsScreen.jsx"></script>
+  <script type="text/babel" src="ProfileScreen.jsx"></script>
+  <script type="text/babel" src="LegalScreen.jsx"></script>
+  <script type="text/babel" src="ShopScreen.jsx"></script>
+
+  <script type="text/babel">
+    const PLAYERS = [
+      { name: "memi", color: "var(--primary)", host: true, status: "host" },
+      { name: "luan", color: "var(--secondary)", textColor: "#fff", status: "pronto" },
+      { name: "ana",  color: "var(--info)",      status: "pronto" },
+      { name: "pedro",color: "var(--success)",   status: "no celular" },
+      { name: "joão", color: "var(--warm)",      status: "pronto" },
+      { name: "carla",color: "var(--special)", textColor: "#fff", status: "entrou agora" },
+    ];
+
+    const FEED = [
+      { who: "memi", text: "locked out of heaven", result: "correct", score: 130 },
+      { who: "luan", text: "locked out heven",     result: "close" },
+      { who: "ana",  text: "drake",                result: "wrong" },
+      { who: "pedro",text: "bruno mars",           result: "correct", score: 60 },
+    ];
+
+    const ROUND_SCORES = [
+      { name: "memi",  delta: 130, total: 1240 },
+      { name: "pedro", delta: 60,  total: 720 },
+      { name: "luan",  delta: 0,   total: 980 },
+      { name: "ana",   delta: 0,   total: 540 },
+    ];
+
+    const PODIUM = [
+      { name: "memi",  score: 1240 },
+      { name: "luan",  score: 980 },
+      { name: "ana",   score: 720 },
+    ];
+    const REST = [
+      { name: "pedro", score: 540 },
+      { name: "joão",  score: 380 },
+      { name: "carla", score: 210 },
+    ];
+
+    const STATS = [
+      { title: "Pessoa que sempre chuta Drake", text: "memi chutou Drake em 7 dos 10 rounds." },
+      { title: "Flash musical",                 text: "luan acertou em 1.4s — recorde da partida." },
+      { title: "Quase gênio",                   text: "ana recebeu 'quase' 6 vezes. Tão perto." },
+      { title: "Caçador de feat",               text: "pedro foi o único a acertar feats." },
+    ];
+
+    const SCREENS = ["Home", "Auth", "Lobby", "Configurações", "Round", "Reveal", "Pódio", "Share", "Perfil", "Loja", "Erro/Vazio", "Legal"];
+    const ERR_KINDS = ["404", "empty", "kicked", "down"];
+
+    function ThemeToggle() {
+      const [dark, setDark] = React.useState(
+        () => document.documentElement.getAttribute("data-theme") === "dark"
+             || (localStorage.getItem("soms-theme") === "dark")
+      );
+      React.useEffect(() => {
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        try { localStorage.setItem("soms-theme", dark ? "dark" : "light"); } catch (e) {}
+      }, [dark]);
+      return (
+        <button className="theme-toggle" onClick={() => setDark(d => !d)} title="Alternar tema">
+          {dark ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+              </svg>
+              Light
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              Dark
+            </>
+          )}
+        </button>
+      );
+    }
+
+    function ErrorSwitcher() {
+      const [kind, setKind] = React.useState("404");
+      return (
+        <div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+            {ERR_KINDS.map((k) => (
+              <button key={k} onClick={() => setKind(k)} style={{
+                padding: "6px 12px", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
+                background: kind === k ? "var(--warm)" : "var(--surface)",
+                border: "2.5px solid var(--ink)", borderRadius: 999,
+                boxShadow: "2px 2px 0 0 var(--shadow-color)", cursor: "pointer",
+              }}>{k}</button>
+            ))}
+          </div>
+          <ErrorEmptyScreen kind={kind} />
+        </div>
+      );
+    }
+
+    function App() {
+      const [screen, setScreen] = React.useState("Home");
+      const [secondsLeft, setSecondsLeft] = React.useState(8);
+
+      React.useEffect(() => {
+        if (screen !== "Round") return;
+        const t = setInterval(() => {
+          setSecondsLeft((s) => (s <= 0 ? 30 : s - 1));
+        }, 1000);
+        return () => clearInterval(t);
+      }, [screen]);
+
+      return (
+        <div className="app-shell">
+          <div className="stage">
+          <div className="nav">
+            {SCREENS.map((s) => (
+              <button key={s}
+                className={"nav-btn" + (screen === s ? " active" : "")}
+                onClick={() => setScreen(s)}>
+                {s}
+              </button>
+            ))}
+            <ThemeToggle />
+          </div>
+
+          {screen === "Home" &&
+            <HomeScreen onCreate={() => setScreen("Lobby")} onJoin={() => setScreen("Lobby")} />}
+          {screen === "Lobby" &&
+            <LobbyScreen code="ABCD12" players={PLAYERS} onStart={() => setScreen("Round")} />}
+          {screen === "Round" &&
+            <GameScreen round={3} total={10} secondsLeft={secondsLeft} feed={FEED} />}
+          {screen === "Reveal" &&
+            <RevealScreen
+              track={{ title: "Locked Out of Heaven", artist: "Bruno Mars", year: 2012 }}
+              scores={ROUND_SCORES}
+              onNext={() => setScreen("Round")}
+            />}
+          {screen === "Pódio" &&
+            <EndScreen podium={PODIUM} rest={REST} stats={STATS} onRematch={() => setScreen("Lobby")} />}
+          {screen === "Share" &&
+            <div style={{ display: "flex", justifyContent: "center", padding: "20px 0 60px" }}>
+              <ShareCard winner="memi" score={1240} stat="memi chutou Drake em 7 dos 10 rounds." />
+            </div>}
+          {screen === "Auth" && <AuthScreen mode="promote" />}
+          {screen === "Configurações" && <SettingsScreen />}
+          {screen === "Perfil" && <ProfileScreen />}
+          {screen === "Loja" && <ShopScreen />}
+          {screen === "Erro/Vazio" && <ErrorSwitcher />}
+          {screen === "Legal" && <LegalScreen />}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

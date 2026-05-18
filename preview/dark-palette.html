@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  html, body { background: #110A1F !important; }
+  .card { background: #110A1F; }
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .sw {
+    border: 3px solid #FFFCF2;
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 0 #FF3D7F;
+    padding: 14px 16px;
+    height: 96px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .sw .name { font-family: var(--font-display); font-weight:800; text-transform: uppercase; font-size:14px; letter-spacing: -0.01em; }
+  .sw .hex  { font-family: var(--font-mono); font-weight:700; font-size: 13px; }
+</style>
+</head><body>
+<div class="card">
+  <div class="swatches">
+    <div class="sw" style="background:#FFD60A; color:#0A0A0A">
+      <div class="name">Primary</div><div class="hex">#FFD60A</div>
+    </div>
+    <div class="sw" style="background:#FF5C9A; color:#fff">
+      <div class="name">Secondary</div><div class="hex">#FF5C9A</div>
+    </div>
+    <div class="sw" style="background:#B8FF1A; color:#0A0A0A">
+      <div class="name">Success</div><div class="hex">#B8FF1A</div>
+    </div>
+    <div class="sw" style="background:#FFB347; color:#0A0A0A">
+      <div class="name">Warm</div><div class="hex">#FFB347</div>
+    </div>
+    <div class="sw" style="background:#00E5FF; color:#0A0A0A">
+      <div class="name">Info</div><div class="hex">#00E5FF</div>
+    </div>
+    <div class="sw" style="background:#BFA5FF; color:#0A0A0A">
+      <div class="name">Special</div><div class="hex">#BFA5FF</div>
+    </div>
+  </div>
+</div>
+</body></html>

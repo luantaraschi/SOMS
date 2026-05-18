@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" width="320" height="120">
+  <defs>
+    
+  </defs>
+  
+  <rect x="20" y="22" width="280" height="80" rx="16" class="ink"></rect>
+  
+  <rect x="12" y="14" width="280" height="80" rx="16" class="yellow" stroke="#0A0A0A" stroke-width="4"></rect>
+  
+  <text x="152" y="76" text-anchor="middle" font-size="58" class="ink">SOMS</text>
+  
+  <circle cx="247" cy="34" r="7" class="pink" stroke="#0A0A0A" stroke-width="3"></circle>
+</svg>

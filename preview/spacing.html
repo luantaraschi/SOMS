@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .row { display:flex; gap:14px; align-items:flex-end; }
+  .col { display:flex; flex-direction:column; align-items:center; gap: 6px; }
+  .tok { font-family: var(--font-mono); font-weight:700; font-size:11px; color: var(--ink-soft); }
+  .box {
+    background: var(--ink);
+    height: 16px;
+  }
+</style>
+</head><body>
+<div class="card">
+  <div class="row">
+    <div class="col"><div class="box" style="width: 4px"></div><div class="tok">1 · 4</div></div>
+    <div class="col"><div class="box" style="width: 8px"></div><div class="tok">2 · 8</div></div>
+    <div class="col"><div class="box" style="width: 12px"></div><div class="tok">3 · 12</div></div>
+    <div class="col"><div class="box" style="width: 16px"></div><div class="tok">4 · 16</div></div>
+    <div class="col"><div class="box" style="width: 24px"></div><div class="tok">6 · 24</div></div>
+    <div class="col"><div class="box" style="width: 32px"></div><div class="tok">8 · 32</div></div>
+    <div class="col"><div class="box" style="width: 48px"></div><div class="tok">12 · 48</div></div>
+    <div class="col"><div class="box" style="width: 64px"></div><div class="tok">16 · 64</div></div>
+  </div>
+  <p style="margin: 18px 0 0; font-family: var(--font-body); font-size:13px; color: var(--ink-soft); line-height: 1.4;">
+    Base 4. Favoreça múltiplos de 8 (8, 16, 24, 32, 48, 64). <strong style="color:var(--ink)">Padding interno</strong> de cards: 24–32. <strong style="color:var(--ink)">Respiro</strong> entre seções: 48–64.
+  </p>
+</div>
+</body></html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .badge {
+    display:inline-flex; align-items:center; gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 3px 3px 0 0 var(--shadow-color);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .row { display:flex; flex-wrap:wrap; gap: 12px; }
+  svg.i { width: 14px; height: 14px; stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head><body>
+<div class="card" style="padding: 26px 32px;">
+  <div class="row">
+    <span class="badge" style="background: var(--special); color:#fff;">
+      <svg class="i" viewBox="0 0 24 24"><path d="M2 8l4 4 6-8 6 8 4-4-2 12H4z"/></svg>
+      Host
+    </span>
+    <span class="badge" style="background: var(--primary);">
+      <svg class="i" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Flash Musical
+    </span>
+    <span class="badge" style="background: var(--success);">
+      <svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Ouvido de Ouro
+    </span>
+    <span class="badge" style="background: var(--secondary); color:#fff;">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/></svg>
+      Confiante e Errado
+    </span>
+    <span class="badge" style="background: var(--warm);">Round 3/10</span>
+    <span class="badge" style="background: var(--info);">Sala Caótica</span>
+    <span class="badge" style="background:var(--surface);">Casual</span>
+  </div>
+</div>
+</body></html>

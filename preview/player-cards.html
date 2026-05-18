@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  .player {
+    display:flex; align-items:center; gap: 14px;
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 6px 6px 0 0 var(--shadow-color);
+    padding: 12px 16px;
+    min-width: 280px;
+  }
+  .avatar {
+    width: 44px; height: 44px;
+    border: 3px solid var(--ink);
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight: 900; font-size: 22px;
+    flex: none;
+  }
+  .name {
+    font-family: var(--font-display); font-weight: 800; font-size: 19px;
+    text-transform: lowercase; letter-spacing: -0.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meta { font-family: var(--font-body); font-size: 12px; color: var(--ink-soft); }
+  .score { margin-left:auto; font-family: var(--font-mono); font-weight:700; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .host-pill {
+    display:inline-flex; align-items:center; gap: 4px;
+    background: var(--special); color:#fff;
+    border: 2px solid var(--ink); border-radius: 999px;
+    box-shadow: 2px 2px 0 0 var(--shadow-color);
+    font-family: var(--font-display); font-weight: 800; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.04em;
+    padding: 3px 8px;
+  }
+  .rows { display:flex; flex-direction:column; gap: 18px; align-items:flex-start; }
+</style>
+</head><body>
+<div class="card" style="padding: 28px 32px;">
+  <div class="rows">
+    <div class="player" style="transform: rotate(-1.5deg);">
+      <div class="avatar" style="background: var(--primary);">M</div>
+      <div>
+        <div class="name">memi <span class="host-pill">Host</span></div>
+        <div class="meta">acertou 4 de 10</div>
+      </div>
+      <div class="score">1.240</div>
+    </div>
+    <div class="player" style="transform: rotate(1.5deg); margin-left: 18px;">
+      <div class="avatar" style="background: var(--secondary); color:#fff;">L</div>
+      <div>
+        <div class="name">luan</div>
+        <div class="meta">chutou Drake 3×</div>
+      </div>
+      <div class="score">980</div>
+    </div>
+  </div>
+</div>
+</body></html>

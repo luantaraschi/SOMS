@@ -1,0 +1,27 @@
+# exploration / scratch
+scrap/
+uploads/
+
+# os / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# dependencies (caso o ui_kit ganhe um package real)
+node_modules/
+dist/
+build/
+.next/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

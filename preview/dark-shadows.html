@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark"><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="_card.css"/>
+<style>
+  html, body { background: #110A1F !important; }
+  .card { background: #110A1F; color: #FFFCF2; padding: 28px 32px; }
+  .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 28px 18px; padding-right: 16px; padding-bottom: 12px; }
+  .demo {
+    background: #1E1432; color: #FFFCF2;
+    border: 3px solid #FFFCF2;
+    border-radius: 12px;
+    height: 84px;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-mono); font-weight:700; font-size: 13px;
+  }
+  .lbl { font-family: var(--font-body); font-weight:700; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color: #C8BDD9; margin-top: 8px; text-align:center; }
+</style>
+</head><body>
+<div class="card">
+  <div class="grid">
+    <div>
+      <div class="demo" style="box-shadow: 3px 3px 0 0 #FF3D7F;">sm 3px</div>
+      <div class="lbl">inputs · chips</div>
+    </div>
+    <div>
+      <div class="demo" style="box-shadow: 6px 6px 0 0 #FF3D7F;">md 6px</div>
+      <div class="lbl">buttons · cards</div>
+    </div>
+    <div>
+      <div class="demo" style="box-shadow: 8px 8px 0 0 #FF3D7F;">lg 8px</div>
+      <div class="lbl">cards importantes</div>
+    </div>
+    <div>
+      <div class="demo" style="box-shadow: 12px 12px 0 0 #FF3D7F;">xl 12px</div>
+      <div class="lbl">hero · pódio</div>
+    </div>
+  </div>
+  <p style="margin: 18px 32px 0; font-family: var(--font-body); font-size:13px; color: #C8BDD9; line-height: 1.4; text-align: center;">
+    Em dark, a sombra preta vira <strong style="color:#FF3D7F">rosa neon</strong>. É o rastro de palco que cada elemento deixa.
+  </p>
+</div>
+</body></html>
