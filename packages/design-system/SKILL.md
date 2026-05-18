@@ -12,7 +12,7 @@ SOMS is a pt-BR web party-game musical: players join a room, hear short clips, r
 
 Read the `README.md` file within this skill first — it contains the full content fundamentals, visual foundations, and iconography rules. Then explore:
 
-- `colors_and_type.css` — canonical CSS variables (colors, type scale, radii, shadows, spacing). **Always import this** when building UI.
+- `tokens.css` — canonical CSS variables (colors, type scale, radii, shadows, spacing). **Always import this** when building UI.
 - `assets/` — logos and marks (`soms-logo.svg`, `soms-mark.svg`, `icon-vinyl.svg`).
 - `preview/*.html` — small reference cards for each token / component pattern. Open these to see exactly how each piece renders.
 - `ui_kits/web_app/` — full click-through recreation of the SOMS web app (Home, Lobby, Round, Reveal, Pódio, Share). Use the JSX components there as the canonical reference for component anatomy.
@@ -20,12 +20,12 @@ Read the `README.md` file within this skill first — it contains the full conte
 ## When building visual artifacts (slides, mocks, throwaway prototypes)
 
 - Copy the assets you need from `assets/` into your output.
-- Always `@import` `colors_and_type.css` — never reinvent the palette.
+- Always `@import` `tokens.css` — never reinvent the palette.
 - Use the components in `ui_kits/web_app/*.jsx` as the canonical "what does a SOMS button/card/badge look like" reference. Cherry-pick into your output.
 
 ## When working on production code
 
-- Tokens in `colors_and_type.css` mirror the values in `SOMS/DESIGN.md`. Keep them in sync.
+- Tokens in `tokens.css` mirror the values in `SOMS/DESIGN.md`. Keep them in sync.
 - For real Next.js implementation: use `next/font/google` to load Unbounded / Inter / JetBrains Mono (not the `@import` we use here for the static system).
 - Real motion uses **Framer Motion springs**, not CSS transitions. See `SOMS/DESIGN.md §5` for snippets.
 - Real components extend **shadcn/ui** customized to these tokens. The JSX in `ui_kits/` is intentionally simpler (cosmetic-only).

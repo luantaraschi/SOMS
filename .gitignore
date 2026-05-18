@@ -1,27 +1,36 @@
-# exploration / scratch
-scrap/
-uploads/
+# Dependencies
+node_modules/
 
-# os / editor
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Cache
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
 .DS_Store
 Thumbs.db
 desktop.ini
 .vscode/
 .idea/
 
-# dependencies (caso o ui_kit ganhe um package real)
-node_modules/
-dist/
-build/
-.next/
-
-# env
-.env
-.env.local
-.env.*.local
-
-# logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Exploração / scratch (renamed from scrap/, uploads/)
+.scrap/
+.uploads/

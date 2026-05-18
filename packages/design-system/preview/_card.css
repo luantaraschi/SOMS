@@ -1,7 +1,7 @@
 /* Preview card shell — used by all design system preview/*.html cards.
    Each card targets ~700×variable. Renders OUTSIDE a title (asset name is shown elsewhere).
 */
-@import url("../colors_and_type.css");
+@import url("../tokens.css");
 
 * { box-sizing: border-box; }
 

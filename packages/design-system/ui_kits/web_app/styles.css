@@ -1,5 +1,5 @@
 /* SOMS UI Kit — shared styles, neobrutalism */
-@import url("../../colors_and_type.css");
+@import url("../../tokens.css");
 
 * { box-sizing: border-box; }
 
