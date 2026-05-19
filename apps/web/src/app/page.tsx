@@ -1,7 +1,9 @@
 'use client';
 
 import {
+  DECADES,
   DEFAULT_TOTAL_ROUNDS,
+  GENRE_KEYS,
   MAX_NICKNAME_LENGTH,
   ROOM_CODE_LENGTH,
   ROUND_DURATION_MS,
@@ -12,8 +14,14 @@ import {
   type RoomCreateAck,
   type RoomJoinAck,
 } from '@soms/shared';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import {
   SmButton,
   SmCard,
@@ -26,9 +34,17 @@ import { useIdentity } from '@/stores/identity';
 type Submitting = 'create' | 'join' | null;
 
 export default function HomePage(): React.ReactElement {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent(): React.ReactElement {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const savedNickname = useIdentity((s) => s.nickname);
-  const userId = useIdentity((s) => s.userId);
   const setIdentity = useIdentity((s) => s.setIdentity);
 
   const [nickname, setNickname] = useState('');
@@ -41,6 +57,21 @@ export default function HomePage(): React.ReactElement {
   useEffect(() => {
     if (savedNickname && nickname === '') setNickname(savedNickname);
   }, [savedNickname, nickname]);
+
+  // Suporta deep-link /?code=ABCD sem auto-submit (C3).
+  useEffect(() => {
+    const codeFromUrl = searchParams.get('code');
+    if (!codeFromUrl) return;
+    const result = validateRoomCode(codeFromUrl);
+    if (result.ok) {
+      setCode(result.normalized);
+    }
+  }, [searchParams]);
+
+  const homeError = useMemo(
+    () => mapHomeError(searchParams.get('error')),
+    [searchParams],
+  );
 
   function onNicknameChange(e: ChangeEvent<HTMLInputElement>): void {
     setNickname(e.target.value);
@@ -113,7 +144,11 @@ export default function HomePage(): React.ReactElement {
         settings: {
           totalRounds: DEFAULT_TOTAL_ROUNDS,
           roundDurationSeconds: Math.floor(ROUND_DURATION_MS / 1000),
-          trackSource: { type: 'genre_decade', genres: [], decades: [] },
+          trackSource: {
+            type: 'genre_decade',
+            genres: [...GENRE_KEYS],
+            decades: [...DECADES],
+          },
         },
       },
       (ack: RoomCreateAck) => {
@@ -176,6 +211,18 @@ export default function HomePage(): React.ReactElement {
 
       <SmCard tilt="l" className="w-full" style={{ maxWidth: '440px' }}>
         <div className="flex flex-col gap-6">
+          {homeError ? (
+            <p
+              className="italic"
+              style={{
+                color: 'var(--danger)',
+                fontSize: 'var(--text-sm)',
+              }}
+            >
+              {homeError}
+            </p>
+          ) : null}
+
           <div>
             <SmLabel htmlFor="nickname">qual seu apelido?</SmLabel>
             <SmInput
@@ -252,4 +299,22 @@ export default function HomePage(): React.ReactElement {
       <p className="t-caption">feito pra ouvir com amigos.</p>
     </main>
   );
+}
+
+function mapHomeError(rawError: string | null): string | null {
+  if (!rawError) return null;
+  switch (rawError) {
+    case 'ROOM_NOT_FOUND':
+      return 'essa sala não existe mais.';
+    case 'ROOM_IN_PROGRESS':
+      return 'essa partida já começou.';
+    case 'ROOM_FULL':
+      return 'essa sala está lotada.';
+    case 'NICKNAME_TAKEN':
+      return 'esse apelido já está em uso na sala.';
+    case 'ROOM_DESTROYED':
+      return 'a sala foi encerrada.';
+    default:
+      return 'não consegui entrar nessa sala. tenta de novo.';
+  }
 }
