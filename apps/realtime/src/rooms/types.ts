@@ -1,19 +1,6 @@
-import type { RoomSettings } from '@soms/shared';
+import type { RoomSettings, RoomStatus } from '@soms/shared';
 
-/**
- * Estados internos da sala no RoomManager.
- *
- * Distinto do `RoomStatus` over-the-wire em `@soms/shared`
- * (que é `'LOBBY' | 'PLAYING' | 'ENDED' | 'CLOSED'`). O mapeamento
- * pra rede acontece na camada de eventos (B3).
- */
-export type RoomStatus =
-  | 'lobby'
-  | 'countdown'
-  | 'playing'
-  | 'reveal'
-  | 'ended'
-  | 'abandoned';
+export type { RoomStatus };
 
 export type Player = {
   userId: string;

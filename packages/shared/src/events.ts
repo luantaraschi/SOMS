@@ -1,79 +1,72 @@
 /**
  * Contratos de eventos WS entre client (`apps/web`) e server (`apps/realtime`).
  *
- * Forma compatível com socket.io: `EventMap = { 'event:name': (payload, ack?) => void }`
+ * Forma compatível com socket.io: `EventMap = { 'event:name': (payload, ack?) => void }`.
  *
- * Sprint 1: inclui o subset mínimo do loop principal — criar/juntar sala,
- * iniciar partida (com pre-load de tracks — ver `ARCHITECTURE.md §5.4`),
- * countdown, round started, guess accepted (private) + slot filled (broadcast),
- * round reveal, partida fim.
+ * **Status:** lowercase com 6 valores, mesmo set usado pelo `RoomManager` interno
+ * em `apps/realtime`. Sem mapeamento — o cliente recebe o estado interno cru, porque
+ * precisa diferenciar `countdown` de `playing` de `reveal` pra UI.
  *
- * Modelo de slots (substitui o velho `GuessResult`):
- *   - Cada track tem N slots ('title', 'artist', N×'feat' — ver slots.ts).
- *   - Cada guess é classificado em um de 4 outcomes (ver `GuessOutcome`).
- *   - Round encerra quando todos os slots têm winners E janela de empate
- *     fechou (ver round-state.ts → `shouldEndRound`).
- *   - Ver ARCHITECTURE.md §9 para spec completa.
- *
- * Eventos do ARCHITECTURE §6 **não** incluídos aqui (Sprint 2+):
- *   - room:kick, game:end (encerrar antes do tempo)
- *   - variações de RoundPayload (BLIND_TEST, WHO_SANG, COVER_REVEAL)
+ * Esses 6 estados são o que circula via WS. A persistência (Prisma) usa um
+ * subset uppercase (`LOBBY/PLAYING/ENDED/CLOSED`) — mapeamento DB acontece em
+ * B4 só nos pontos de persistência.
  */
 
 import type { SlotKind } from './slots.js';
 
 // ============================================================
-//  ENUMS COMO STRING LITERALS (paridade com Prisma)
+//  ENUMS COMO STRING LITERALS
 // ============================================================
 
 export type RoomMode = 'CLASSIC';
 // Sprint 2+ adicionará 'BLIND_TEST' | 'WHO_SANG' | 'PLAYLIST_WARS' | 'COVER_REVEAL' | 'CHAOS'
 
-export type RoomStatus = 'LOBBY' | 'PLAYING' | 'ENDED' | 'CLOSED';
+export type RoomStatus =
+  | 'lobby'
+  | 'countdown'
+  | 'playing'
+  | 'reveal'
+  | 'ended'
+  | 'abandoned';
 
-export type ErrorCode =
+// ============================================================
+//  ERROS DO SERVIDOR
+// ============================================================
+
+export type ServerErrorCode =
+  // Vindos do RoomManager (mapeados 1:1 do RoomError em apps/realtime)
   | 'ROOM_NOT_FOUND'
   | 'ROOM_FULL'
+  | 'NICKNAME_TAKEN'
+  | 'NICKNAME_INVALID'
+  | 'ROOM_IN_PROGRESS'
   | 'ROOM_ENDED'
   | 'NOT_HOST'
-  | 'INVALID_STATE'
-  | 'NICKNAME_INVALID'
-  | 'GUESS_RATE_LIMITED'
-  | 'UNAUTHORIZED'
+  | 'PLAYER_NOT_IN_ROOM'
+  | 'PLAYER_ALREADY_IN_ROOM'
+  | 'INVALID_STATUS_TRANSITION'
+  | 'HOST_TRANSFER_NOT_ALLOWED'
+  | 'CANNOT_KICK_SELF'
+  | 'CANNOT_TRANSFER_TO_SELF'
+  // Específicos da camada socket
+  | 'NOT_IN_ROOM'
+  | 'UNAUTHENTICATED'
+  | 'RATE_LIMITED'
+  // Game (B4/B5)
   | 'INSUFFICIENT_TRACKS'
-  | 'DEEZER_UNAVAILABLE_FOR_START';
+  | 'DEEZER_UNAVAILABLE_FOR_START'
+  // Fallback
+  | 'INTERNAL_ERROR';
+
+export type ServerError = {
+  code: ServerErrorCode;
+  /** Mensagem em pt-BR, lowercase (voz SOMS). */
+  message: string;
+  details?: Record<string, unknown>;
+};
 
 // ============================================================
-//  GUESS OUTCOME — discriminated union (private ao guesser)
-// ============================================================
-
-/**
- * Resultado de um guess. Comunicado **privadamente** ao autor via
- * `game:guess:accepted`. Broadcasts públicos vão por `game:slot:filled`.
- */
-export type GuessOutcome =
-  /** Acertou um slot livre — ganhou pontos (base + speed). */
-  | {
-      kind: 'hit';
-      slot: { kind: SlotKind; display: string };
-      points: number;
-      /** True se este guess caiu na tie window de um slot já com 1+ winner. */
-      isTie: boolean;
-    }
-  /** Slot já preenchido e janela de empate fechou — sem pontos. */
-  | {
-      kind: 'too_late';
-      slot: { kind: SlotKind; display: string };
-      /** Quem(s) pegou primeiro. */
-      winners: { nickname: string }[];
-    }
-  /** Não bateu em nenhum slot. */
-  | { kind: 'miss' }
-  /** Excedeu `GUESS_RATE_LIMIT_MS` — guess descartado. */
-  | { kind: 'rate_limited' };
-
-// ============================================================
-//  TIPOS AUXILIARES (snapshots e shapes compartilhados)
+//  TIPOS AUXILIARES
 // ============================================================
 
 export type RoomSettings = {
@@ -88,28 +81,49 @@ export type RoomSettings = {
  */
 export type TrackSource = {
   type: 'genre_decade';
-  genres: string[]; // GenreKey[] do GENRES map em ./genres
-  decades: number[]; // subset de DECADES em ./constants
+  genres: string[];
+  decades: number[];
 };
 
-export type Player = {
-  id: string;
+export type PlayerSnapshot = {
+  userId: string;
   nickname: string;
+  joinedAt: number;
   isHost: boolean;
   isConnected: boolean;
 };
 
 export type RoomSnapshot = {
-  id: string;
   code: string;
   status: RoomStatus;
-  mode: RoomMode;
+  hostUserId: string;
+  players: PlayerSnapshot[];
   settings: RoomSettings;
+  yourUserId: string;
 };
 
-export type RoundPayload = {
-  previewUrl: string;
-};
+// ============================================================
+//  GUESS / GAME PAYLOADS (esqueletos pra B4/B5)
+// ============================================================
+
+/**
+ * Resultado de um guess. Comunicado **privadamente** ao autor via
+ * `game:guess:accepted`. Broadcasts públicos vão por `game:slot:filled`.
+ */
+export type GuessOutcome =
+  | {
+      kind: 'hit';
+      slot: { kind: SlotKind; display: string };
+      points: number;
+      isTie: boolean;
+    }
+  | {
+      kind: 'too_late';
+      slot: { kind: SlotKind; display: string };
+      winners: { nickname: string }[];
+    }
+  | { kind: 'miss' }
+  | { kind: 'rate_limited' };
 
 export type ScoreSnapshot = {
   userId: string;
@@ -138,7 +152,6 @@ export type PodiumEntry = {
   score: number;
 };
 
-/** Winner identificado publicamente em `game:slot:filled` e `game:round:reveal`. */
 export type SlotWinnerPublic = {
   userId: string;
   nickname: string;
@@ -146,98 +159,89 @@ export type SlotWinnerPublic = {
   tIntoRoundMs: number;
 };
 
-/** Estado de um slot ao final do round, usado no reveal. */
 export type SlotFillPublic = {
   kind: SlotKind;
-  /** Valor revelado (ex: "Pop", "Harry Styles"). */
   display: string;
-  /** Winners do slot (1 = sem empate; >1 = empates dentro da TIE_WINDOW). Pode ser `[]` se ninguém acertou. */
   winners: SlotWinnerPublic[];
 };
 
 // ============================================================
-//  PAYLOADS DE EVENTOS
+//  PAYLOADS DE EVENTOS — ROOM
 // ============================================================
 
-export type RoomCreatePayload = {
-  mode: RoomMode;
-  settings: RoomSettings;
+export type RoomCreatePayload = { settings: RoomSettings };
+
+export type RoomCreateAck =
+  | { ok: true; code: string; snapshot: RoomSnapshot }
+  | { ok: false; error: ServerError };
+
+export type RoomJoinPayload = { code: string };
+
+export type RoomJoinAck =
+  | { ok: true; snapshot: RoomSnapshot }
+  | { ok: false; error: ServerError };
+
+export type RoomLeaveAck = { ok: boolean };
+
+export type RoomKickPayload = { targetUserId: string };
+export type RoomKickAck = { ok: boolean; error?: ServerError };
+
+export type RoomTransferHostPayload = { newHostUserId: string };
+export type RoomTransferHostAck = { ok: boolean; error?: ServerError };
+
+export type RoomSettingsUpdatePayload = { settings: Partial<RoomSettings> };
+export type RoomSettingsUpdateAck = { ok: boolean; error?: ServerError };
+
+// Broadcast events (server → cliente)
+export type RoomPlayerJoinedEvent = { player: PlayerSnapshot };
+export type RoomPlayerLeftEvent = {
+  userId: string;
+  reason: 'leave' | 'disconnect_timeout' | 'kick';
 };
-
-export type RoomCreateAck = { code: string };
-
-export type RoomJoinPayload = {
-  code: string;
-  nickname: string;
+export type RoomPlayerDisconnectedEvent = { userId: string };
+export type RoomPlayerReconnectedEvent = { userId: string };
+export type RoomHostChangedEvent = {
+  oldHostUserId: string;
+  newHostUserId: string;
+  reason: 'manual' | 'fallback';
 };
+export type RoomSettingsUpdatedEvent = { settings: RoomSettings };
+export type RoomStatusChangedEvent = { from: RoomStatus; to: RoomStatus };
+export type RoomDestroyedEvent = { code: string };
 
-export type RoomJoinAck = { ok: true } | { ok: false; error: ErrorCode; message: string };
+// ============================================================
+//  PAYLOADS DE EVENTOS — GAME (esqueletos)
+// ============================================================
 
-export type GameGuessPayload = {
-  text: string;
-};
+export type GameStartAck = { ok: boolean; error?: ServerError };
 
-// room:settings:update — host edita gêneros/décadas no lobby (status=LOBBY).
-export type RoomSettingsUpdatePayload = {
-  genres: string[];
-  decades: number[];
-};
+export type GameGuessPayload = { text: string };
 
-// room:settings:updated — server broadcast pra todos os players da sala.
-export type RoomSettingsUpdatedEvent = {
-  settings: RoomSettings;
-};
+export type GameReadyNextRoundAck = { ok: boolean; error?: ServerError };
 
-export type RoomJoinedEvent = {
-  room: RoomSnapshot;
-  players: Player[];
-  you: Player;
-};
-
-export type RoomPlayerJoinedEvent = { player: Player };
-export type RoomPlayerLeftEvent = { userId: string };
-export type RoomHostChangedEvent = { newHostId: string };
-
-/**
- * `game:preparing` — emitido em `room:start`, **antes do countdown**, enquanto
- * o pre-load de URLs frescas roda (ver ARCHITECTURE.md §5.4 / SPRINT_1.md B5).
- * UX no cliente: "Preparando partida...".
- */
 export type GamePreparingEvent = { totalRounds: number };
 
 export type GameCountdownEvent = { secondsLeft: number };
 
 export type GameRoundStartedEvent = {
-  roundIndex: number; // 1..totalRounds
+  roundIndex: number;
   totalRounds: number;
   durationSeconds: number;
-  previewUrl: string; // URL fresca via pre-load
+  previewUrl: string;
 };
 
-/** `game:guess:accepted` — **PRIVADO** ao autor. Confirmação + outcome. */
-export type GameGuessAcceptedEvent = {
-  outcome: GuessOutcome;
-};
+export type GameGuessAcceptedEvent = { outcome: GuessOutcome };
 
-/**
- * `game:slot:filled` — **BROADCAST**. Slot recém-preenchido OU novo winner
- * dentro da tie window. Cliente atualiza placar e mostra animação de acerto.
- */
 export type GameSlotFilledEvent = {
   slotKind: SlotKind;
-  /** Valor revelado (ex: "Pop"). */
   slotDisplay: string;
-  /** Winners deste broadcast — 1 elemento se `isFirstFill=true` (sem empate), 1+ se empate. */
   winners: SlotWinnerPublic[];
-  /** True na 1ª vez que o slot é preenchido; false = winner(s) adicional(is) dentro da tie window. */
   isFirstFill: boolean;
 };
 
 export type GameRoundRevealEvent = {
   track: TrackReveal;
-  /** Estado final dos slots da track. Slots sem winners aparecem com `winners: []`. */
   slotFills: SlotFillPublic[];
-  /** Total acumulado + delta deste round, por player. */
   scores: ScoreDelta[];
 };
 
@@ -246,39 +250,63 @@ export type GameEndedEvent = {
   ranking: ScoreSnapshot[];
 };
 
-export type ErrorEvent = {
-  code: ErrorCode;
-  message: string;
-};
+// ============================================================
+//  UTILITÁRIO — ping
+// ============================================================
+
+export type PingAck = { serverTime: number };
 
 // ============================================================
-//  MAPAS DE EVENTOS (compatíveis com socket.io v4)
+//  MAPAS DE EVENTOS (socket.io v4)
 // ============================================================
 
 export interface ClientToServerEvents {
+  // Sala
   'room:create': (payload: RoomCreatePayload, ack: (res: RoomCreateAck) => void) => void;
   'room:join': (payload: RoomJoinPayload, ack: (res: RoomJoinAck) => void) => void;
-  'room:leave': () => void;
-  'room:settings:update': (payload: RoomSettingsUpdatePayload) => void;
-  'room:start': () => void;
+  'room:leave': (ack: (res: RoomLeaveAck) => void) => void;
+  'room:kick': (payload: RoomKickPayload, ack: (res: RoomKickAck) => void) => void;
+  'room:transfer_host': (
+    payload: RoomTransferHostPayload,
+    ack: (res: RoomTransferHostAck) => void,
+  ) => void;
+  'room:settings:update': (
+    payload: RoomSettingsUpdatePayload,
+    ack: (res: RoomSettingsUpdateAck) => void,
+  ) => void;
+
+  // Jogo (esqueletos)
+  'game:start': (ack: (res: GameStartAck) => void) => void;
   'game:guess': (payload: GameGuessPayload) => void;
-  'game:ready_next': () => void;
+  'game:ready_next_round': (ack: (res: GameReadyNextRoundAck) => void) => void;
+
+  // Utilitário
+  ping: (ack: (res: PingAck) => void) => void;
 }
 
 export interface ServerToClientEvents {
-  'room:joined': (payload: RoomJoinedEvent) => void;
+  // Reconexão / snapshot inicial
+  'room:snapshot': (snapshot: RoomSnapshot) => void;
+
+  // Sala — broadcasts
   'room:player:joined': (payload: RoomPlayerJoinedEvent) => void;
   'room:player:left': (payload: RoomPlayerLeftEvent) => void;
+  'room:player:disconnected': (payload: RoomPlayerDisconnectedEvent) => void;
+  'room:player:reconnected': (payload: RoomPlayerReconnectedEvent) => void;
   'room:host:changed': (payload: RoomHostChangedEvent) => void;
   'room:settings:updated': (payload: RoomSettingsUpdatedEvent) => void;
+  'room:status:changed': (payload: RoomStatusChangedEvent) => void;
+  'room:destroyed': (payload: RoomDestroyedEvent) => void;
+
+  // Jogo (esqueletos)
   'game:preparing': (payload: GamePreparingEvent) => void;
   'game:countdown': (payload: GameCountdownEvent) => void;
   'game:round:started': (payload: GameRoundStartedEvent) => void;
-  /** Privado — só o guesser recebe. */
   'game:guess:accepted': (payload: GameGuessAcceptedEvent) => void;
-  /** Broadcast — slot preenchido ou empate dentro da tie window. */
   'game:slot:filled': (payload: GameSlotFilledEvent) => void;
   'game:round:reveal': (payload: GameRoundRevealEvent) => void;
   'game:ended': (payload: GameEndedEvent) => void;
-  error: (payload: ErrorEvent) => void;
+
+  // Erros
+  error: (payload: ServerError) => void;
 }

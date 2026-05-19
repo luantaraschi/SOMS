@@ -4,7 +4,7 @@ import {
   getActivePlayers,
   isWithinTieWindow,
   shouldEndRound,
-  type PlayerSnapshot,
+  type RoundPlayerSnapshot,
   type RoundState,
 } from '../src/round-state.js';
 import { buildSlotsForTrack } from '../src/slots.js';
@@ -63,7 +63,7 @@ describe('shouldEndRound', () => {
       ],
     });
     const now = rs.startedAt + 6_000 + TIE_WINDOW_MS + 100;
-    const players: PlayerSnapshot[] = [
+    const players: RoundPlayerSnapshot[] = [
       { userId: 'u1', isConnected: false, lastDisconnectAt: now - DISCONNECT_GRACE_MS - 5_000 },
     ];
     expect(shouldEndRound(rs, players, now)).toBe(true);
@@ -87,7 +87,7 @@ describe('isWithinTieWindow', () => {
 describe('getActivePlayers', () => {
   it('retorna conectados + desconectados dentro da grace; exclui passou grace', () => {
     const now = 1_000_000;
-    const players: PlayerSnapshot[] = [
+    const players: RoundPlayerSnapshot[] = [
       { userId: 'connected', isConnected: true },
       { userId: 'recent-disco', isConnected: false, lastDisconnectAt: now - 5_000 },
       { userId: 'old-disco', isConnected: false, lastDisconnectAt: now - DISCONNECT_GRACE_MS - 1 },

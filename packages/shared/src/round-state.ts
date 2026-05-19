@@ -43,7 +43,7 @@ export type RoundState = {
  * Snapshot mínimo de player para `shouldEndRound` e `getActivePlayers`.
  * Não inclui nickname etc. — só basta saber se ele ainda "conta" para o round.
  */
-export type PlayerSnapshot = {
+export type RoundPlayerSnapshot = {
   userId: string;
   isConnected: boolean;
   /** Timestamp da última desconexão. Combinado com `isConnected=false` decide se ainda está na grace. */
@@ -82,7 +82,7 @@ export function isWithinTieWindow(
  */
 export function shouldEndRound(
   roundState: RoundState,
-  _activePlayers: PlayerSnapshot[],
+  _activePlayers: RoundPlayerSnapshot[],
   now: number = Date.now(),
 ): boolean {
   if (roundState.endedAt !== undefined) return true;
@@ -107,9 +107,9 @@ export function shouldEndRound(
  * mostrar lista de ativos no client.
  */
 export function getActivePlayers(
-  players: PlayerSnapshot[],
+  players: RoundPlayerSnapshot[],
   now: number = Date.now(),
-): PlayerSnapshot[] {
+): RoundPlayerSnapshot[] {
   return players.filter((p) => {
     if (p.isConnected) return true;
     if (p.lastDisconnectAt === undefined) return false;
