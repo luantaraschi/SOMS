@@ -22,7 +22,8 @@
     "db:seed": "pnpm --filter @soms/db exec prisma db seed",
     "db:studio": "pnpm --filter @soms/db exec prisma studio",
     "db:verify-cache": "pnpm --filter @soms/db exec tsx scripts/verify-cache-health.ts",
-    "realtime:dev": "pnpm --filter @soms/realtime dev"
+    "realtime:dev": "pnpm --filter @soms/realtime dev",
+    "web:dev": "pnpm --filter @soms/web dev"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

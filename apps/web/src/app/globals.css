@@ -1,0 +1,58 @@
+/* SOMS web — globals.
+ * Estratégia documentada em docs/project/DESIGN.md §8:
+ * - tokens.css = fonte canônica das CSS vars (cores, raios, sombras, escala).
+ * - styles.css = classes .sm-* (anatomia neobrutalist: bordas, sombras hard,
+ *   hover/active, variantes de botão/input/card/badge).
+ * - tailwindcss = utilities. @theme inline expõe tokens como utility-classes
+ *   (bg-primary, text-ink, font-display, etc).
+ */
+@import '@soms/design-system/tokens.css';
+@import '@soms/design-system/styles.css';
+@import 'tailwindcss';
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-success: var(--success);
+  --color-warm: var(--warm);
+  --color-info: var(--info);
+  --color-special: var(--special);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+/* Tailwind v4 não gera border-3 / border-4 nativamente. DESIGN.md §8 */
+@utility border-3 {
+  border-width: 3px;
+}
+@utility border-4 {
+  border-width: 4px;
+}
+
+/* Pattern de bolinhas pretas discretas — DESIGN.md §2.5 "Backgrounds & textura".
+ * Espelha o .app-shell do design-system, mas em escopo de elemento (uso direto
+ * em <main className="paper">). tokens.css já garante swap automático em dark.
+ */
+.paper {
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--ink) 10%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  min-height: 100vh;
+}

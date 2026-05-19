@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./tokens.css": "./tokens.css",
+    "./styles.css": "./ui_kits/web_app/styles.css",
     "./assets/*": "./assets/*"
   }
 }

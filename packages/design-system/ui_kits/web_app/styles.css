@@ -1,5 +1,12 @@
-/* SOMS UI Kit — shared styles, neobrutalism */
-@import url("../../tokens.css");
+/* SOMS UI Kit — shared styles, neobrutalism.
+ *
+ * Este arquivo NÃO importa tokens.css. O consumer (apps/web/globals.css ou
+ * cada preview HTML) é responsável por carregar tokens.css ANTES deste.
+ * Razão: webpack/turbopack do Next não resolve `@import url("../../tokens.css")`
+ * relativo dentro de pnpm symlinks — quebrava a importação via package
+ * (`@soms/design-system/styles.css`). Manter aqui sem @import deixa o pacote
+ * consumível tanto via package import quanto via <link> standalone.
+ */
 
 * { box-sizing: border-box; }
 
