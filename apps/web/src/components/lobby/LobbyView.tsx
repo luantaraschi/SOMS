@@ -10,8 +10,10 @@ import { StartButton } from './StartButton';
 
 export function LobbyView({
   snapshot,
+  emptyState = null,
 }: {
   snapshot: RoomSnapshot;
+  emptyState?: React.ReactNode;
 }): React.ReactElement {
   const userId = useIdentity((s) => s.userId);
   const isHost = snapshot.hostUserId === userId;
@@ -34,6 +36,8 @@ export function LobbyView({
         />
         <SettingsPanel settings={snapshot.settings} canEdit={isHost} />
       </div>
+
+      {emptyState ? <div className="mb-12">{emptyState}</div> : null}
 
       {isHost ? (
         <div className="flex justify-center">

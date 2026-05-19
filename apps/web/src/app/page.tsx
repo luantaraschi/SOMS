@@ -16,7 +16,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Suspense,
   useEffect,
-  useMemo,
   useState,
   type ChangeEvent,
 } from 'react';
@@ -27,6 +26,8 @@ import {
   SmInput,
   SmLabel,
 } from '@/components/primitives';
+import { ErrorScreen } from '@/components/screens/ErrorScreen';
+import { mapServerErrorToKind } from '@/lib/error-mapping';
 import { disconnectSocket, getSocket } from '@/lib/socket';
 import { useIdentity } from '@/stores/identity';
 import { useRoom } from '@/stores/room';
@@ -73,10 +74,29 @@ function HomeContent(): React.ReactElement {
     }
   }, [searchParams]);
 
-  const homeError = useMemo(
-    () => mapHomeError(searchParams.get('error')),
-    [searchParams],
-  );
+  const errorCode = searchParams.get('error');
+  const codeParam = searchParams.get('code');
+
+  if (errorCode) {
+    const errorKind = mapServerErrorToKind(errorCode);
+    return (
+      <ErrorScreen
+        kind={errorKind}
+        onPrimary={() => router.push('/')}
+        secondaryAction={
+          errorKind === '404'
+            ? {
+                label: 'Tentar outro código',
+                onClick: () => {
+                  const codeQuery = codeParam ? `?code=${encodeURIComponent(codeParam)}` : '';
+                  router.push(`/${codeQuery}`);
+                },
+              }
+            : null
+        }
+      />
+    );
+  }
 
   function onNicknameChange(e: ChangeEvent<HTMLInputElement>): void {
     setNickname(e.target.value);
@@ -239,18 +259,6 @@ function HomeContent(): React.ReactElement {
 
       <SmCard tilt="l" className="w-full" style={{ maxWidth: '440px' }}>
         <div className="flex flex-col gap-6">
-          {homeError ? (
-            <p
-              className="italic"
-              style={{
-                color: 'var(--danger)',
-                fontSize: 'var(--text-sm)',
-              }}
-            >
-              {homeError}
-            </p>
-          ) : null}
-
           <div>
             <SmLabel htmlFor="nickname">qual seu apelido?</SmLabel>
             <SmInput
@@ -327,22 +335,4 @@ function HomeContent(): React.ReactElement {
       <p className="t-caption">feito pra ouvir com amigos.</p>
     </main>
   );
-}
-
-function mapHomeError(rawError: string | null): string | null {
-  if (!rawError) return null;
-  switch (rawError) {
-    case 'ROOM_NOT_FOUND':
-      return 'essa sala não existe mais.';
-    case 'ROOM_IN_PROGRESS':
-      return 'essa partida já começou.';
-    case 'ROOM_FULL':
-      return 'essa sala está lotada.';
-    case 'NICKNAME_TAKEN':
-      return 'esse apelido já está em uso na sala.';
-    case 'ROOM_DESTROYED':
-      return 'a sala foi encerrada.';
-    default:
-      return 'não consegui entrar nessa sala. tenta de novo.';
-  }
 }

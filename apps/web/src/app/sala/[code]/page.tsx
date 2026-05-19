@@ -1,8 +1,11 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { LobbyView } from '@/components/lobby/LobbyView';
-import { SmBrand, SmButton, SmCard } from '@/components/primitives';
+import { EmptyState } from '@/components/screens/EmptyState';
+import { ErrorScreen } from '@/components/screens/ErrorScreen';
+import { SmBrand } from '@/components/primitives';
 import { useLobbyConnection } from '@/hooks/useLobbyConnection';
 import { useRoom } from '@/stores/room';
 
@@ -24,10 +27,15 @@ export default function LobbyPage({
   }
 
   if (connectionStatus === 'error' || connectionStatus === 'disconnected') {
-    return <LobbyError code={code} status={connectionStatus} />;
+    return <LobbyError />;
   }
 
-  return <LobbyView snapshot={snapshot} />;
+  return (
+    <LobbyView
+      snapshot={snapshot}
+      emptyState={snapshot.players.length === 1 ? <EmptyState /> : null}
+    />
+  );
 }
 
 function LobbyLoading({ code }: { code: string }): React.ReactElement {
@@ -44,27 +52,13 @@ function LobbyLoading({ code }: { code: string }): React.ReactElement {
   );
 }
 
-function LobbyError({
-  code,
-  status,
-}: {
-  code: string;
-  status: string;
-}): React.ReactElement {
+function LobbyError(): React.ReactElement {
+  const router = useRouter();
   return (
-    <main className="paper min-h-screen flex items-center justify-center p-8">
-      <SmCard tilt="l" className="p-8 max-w-md">
-        <p className="t-h2">conexão perdida</p>
-        <p className="text-ink-soft mt-2">
-          tentando reconectar... ({status})
-        </p>
-        <p className="t-caption t-mono mt-2">{code}</p>
-        <div className="mt-4">
-          <SmButton variant="ghost" onClick={() => window.location.reload()}>
-            recarregar
-          </SmButton>
-        </div>
-      </SmCard>
-    </main>
+    <ErrorScreen
+      kind="down"
+      onPrimary={() => window.location.reload()}
+      secondaryAction={{ label: 'Voltar pra Home', onClick: () => router.push('/') }}
+    />
   );
 }
