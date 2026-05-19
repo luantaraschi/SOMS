@@ -580,38 +580,70 @@ Pra músicas do Deezer importadas, começa sem aliases. Pós-MVP: ferramenta de 
 
 ---
 
-## 9. Pontuação (resumo executável)
+## 9. Pontuação e regras de round (Clássico Turbinado)
 
-Tudo em `packages/shared/src/scoring.ts`:
+Lógica server-authoritative em [`packages/shared`](../../packages/shared/) — `slots.ts`, `round-state.ts`, `scoring.ts`. Constantes em `constants.ts`.
 
-```ts
-const BASE = {
-  title: 100,
-  artist: 60,
-  feat: 40,
-  bonusTitleAndArtist: 30,
-  bonusTitleArtistFeat: 50,
-};
+### Modelo de slots
 
-const SPEED_BONUS = (msIntoRound: number, roundMs: number) => {
-  // Decai linearmente de 50 → 0 ao longo do round
-  const ratio = 1 - msIntoRound / roundMs;
-  return Math.max(0, Math.round(50 * ratio));
-};
+Cada track tem N slots de resposta:
 
-const STREAK_MULT = (streak: number) =>
-  streak >= 3 ? 1.1 : 1;
+- **1 slot `title`** (`POINTS_TITLE` = 100 pts base)
+- **1 slot `artist`** para `artists[0]` (`POINTS_ARTIST` = 60 pts base)
+- **N slots `feat`** para `artists[1+]` (`POINTS_FEAT` = 40 pts base cada)
 
-const MODE_MULT = {
-  BLIND_TEST_5s: 1,
-  BLIND_TEST_3s: 1.5,
-  BLIND_TEST_1s: 2,
-};
+Sprint 1 popula `feats: []` no seed, então tracks têm 2 slots; modelo está pronto pra feats em Sprint 2+.
 
-const APPROX_PENALTY = 0.9; // -10% se foi CORRECT via Levenshtein
+### Speed bonus
 
-const PLAYLIST_OWNER_DELAY_MS = 3000;
+Bônus linear decrescente de `SPEED_BONUS_MAX` (50) a 0 ao longo do round:
+
 ```
+bonus = SPEED_BONUS_MAX × max(0, 1 − tIntoRoundMs / ROUND_DURATION_MS)
+total = slot.basePoints + round(bonus)
+```
+
+`ROUND_DURATION_MS` = 30000 (30s).
+
+### Empate temporal
+
+Quando jogador A acerta um slot em `t = X`, **abre uma janela** de `TIE_WINDOW_MS` = 200ms.
+
+- Jogadores que acertem o **mesmo valor** dentro de [X, X+200ms] **ganham os mesmos pontos que A** (sem bônus de "primeiro", sem penalidade).
+- Após a janela: slot trava de vez. Tentativas posteriores no mesmo valor recebem `GuessOutcome.too_late` com a lista de winners.
+
+`isWithinTieWindow(candidateT, firstFillT)` em `round-state.ts` é o predicado canônico.
+
+### Encerramento antecipado
+
+Round encerra **antes** do timeout quando:
+
+1. TODOS os slots têm pelo menos 1 winner, **E**
+2. Para cada slot, passou mais de `TIE_WINDOW_MS` desde o primeiro fill (janela fechada).
+
+Caso contrário: round encerra por **timeout** quando `tIntoRoundMs >= ROUND_DURATION_MS`.
+
+`shouldEndRound(roundState, activePlayers, now)` em `round-state.ts` é o predicado canônico.
+
+### Jogador desconectado
+
+- Considerado **inativo** após `DISCONNECT_GRACE_MS` (10s) sem reconectar.
+- **Não bloqueia** encerramento antecipado (o critério é sobre slots, não sobre jogadores presentes).
+- Pontos já marcados se mantêm — não perde score por sair.
+- Reconectar dentro da grace: retoma normalmente, server reenvia snapshot do round.
+
+`getActivePlayers(players, now)` filtra a lista para os ainda dentro da grace.
+
+### Sem bônus de "complete"
+
+Cada slot vale só ele mesmo (base + speed). **Não há** bônus extra por um mesmo jogador acertar múltiplos slots (título + artista) no mesmo round. Cada acerto é independente.
+
+### NÃO implementado no Sprint 1
+
+- streak multiplier
+- mode multiplier (Blind Test 1.5×/2×)
+- approx penalty (sem Levenshtein → todos os matches são exact)
+- playlist owner delay (Playlist Wars é Sprint 2+)
 
 ---
 
