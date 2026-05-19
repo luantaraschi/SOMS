@@ -29,6 +29,7 @@ import {
 } from '@/components/primitives';
 import { disconnectSocket, getSocket } from '@/lib/socket';
 import { useIdentity } from '@/stores/identity';
+import { useRoom } from '@/stores/room';
 
 type Submitting = 'create' | 'join' | null;
 
@@ -167,6 +168,7 @@ function HomeContent(): React.ReactElement {
           return;
         }
         if (ack.ok) {
+          useRoom.getState().setSnapshot(ack.snapshot);
           router.push(`/sala/${ack.code}`);
         } else {
           // Erro lógico do server: socket fica num estado conhecido (possivelmente
@@ -206,6 +208,7 @@ function HomeContent(): React.ReactElement {
           return;
         }
         if (ack.ok) {
+          useRoom.getState().setSnapshot(ack.snapshot);
           router.push(`/sala/${codeResult.normalized}`);
         } else {
           disconnectSocket();

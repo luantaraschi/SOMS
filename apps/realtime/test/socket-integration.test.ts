@@ -178,6 +178,51 @@ describe('socket-integration — fluxo de sala', () => {
     expect(event.player.nickname).toBe('memi');
   });
 
+  it('socket cria sala + imediatamente emite room:join no mesmo code → ack ok, sala intacta', async () => {
+    const host = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(host);
+    const created = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!created.ok) throw new Error();
+
+    const rejoin = await emitWithAck<RoomJoinAck>(host, 'room:join', {
+      code: created.code,
+    });
+    expect(rejoin.ok).toBe(true);
+    if (!rejoin.ok) return;
+    expect(rejoin.snapshot.code).toBe(created.code);
+    expect(rejoin.snapshot.players).toHaveLength(1);
+    expect(rejoin.snapshot.players[0]?.userId).toBe(HOST_USER_ID);
+  });
+
+  it('player conectado faz room:join no MESMO code → idempotent, sala intacta', async () => {
+    const host = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(host);
+    const created = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!created.ok) throw new Error();
+
+    const member = connect({ userId: MEMBER_USER_ID, nickname: 'memi' });
+    await waitForConnect(member);
+    const firstJoin = await emitWithAck<RoomJoinAck>(member, 'room:join', {
+      code: created.code,
+    });
+    expect(firstJoin.ok).toBe(true);
+
+    const rejoin = await emitWithAck<RoomJoinAck>(member, 'room:join', {
+      code: created.code,
+    });
+    expect(rejoin.ok).toBe(true);
+    if (!rejoin.ok) return;
+    expect(rejoin.snapshot.code).toBe(created.code);
+    expect(rejoin.snapshot.players).toHaveLength(2);
+    expect(rejoin.snapshot.players.map((p) => p.userId).sort()).toEqual(
+      [HOST_USER_ID, MEMBER_USER_ID].sort(),
+    );
+  });
+
   it('member faz room:leave → host recebe room:player:left reason=leave', async () => {
     const host = connect({ userId: HOST_USER_ID, nickname: 'host' });
     await waitForConnect(host);

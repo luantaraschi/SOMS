@@ -15,6 +15,23 @@ export function registerRoomJoinHandler(
   ctx: HandlerContext,
 ): void {
   socket.on('room:join', (payload, ack) => {
+    // Idempotent rejoin: mesmo socket/user já conectado na sala alvo.
+    // Evita efeito colateral do guard de membership (caso 3) no fluxo
+    // legítimo room:create -> navegação -> room:join do mesmo code.
+    const targetRoom = ctx.manager.getRoom(payload.code);
+    if (targetRoom) {
+      const existing = targetRoom.players.get(socket.data.userId);
+      if (existing && existing.isConnected) {
+        socket.data.currentRoomCode = payload.code;
+        void socket.join(roomChannel(payload.code));
+        ack({
+          ok: true,
+          snapshot: buildRoomSnapshot(targetRoom, socket.data.userId),
+        });
+        return;
+      }
+    }
+
     const guard = ensureNotInAnotherRoom(socket, ctx.manager);
     if (guard === 'blocked') {
       ack({ ok: false, error: ALREADY_IN_ROOM_ERR });
