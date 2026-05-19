@@ -21,7 +21,10 @@ export type ConnectAuth = {
 };
 
 export function getSocket(auth: ConnectAuth): TypedSocket {
-  if (socket) return socket;
+  if (socket) {
+    socket.auth = auth;
+    return socket;
+  }
   socket = io(REALTIME_URL, {
     auth,
     autoConnect: false,

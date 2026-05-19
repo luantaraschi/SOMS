@@ -12,6 +12,7 @@
   "dependencies": {
     "@soms/design-system": "workspace:*",
     "@soms/shared": "workspace:*",
+    "framer-motion": "^12.39.0",
     "lucide-react": "^0.460.0",
     "next": "^15.5.0",
     "react": "^19.0.0",
