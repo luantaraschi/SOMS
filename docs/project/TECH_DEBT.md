@@ -4,6 +4,15 @@ Lista curta de débitos técnicos conhecidos. Cada item tem: gatilho, ação, pr
 
 ---
 
+## Transferência manual de host restrita a `lobby` (Sprint 1)
+
+- **Onde:** [`apps/realtime/src/rooms/room-manager.ts`](../../apps/realtime/src/rooms/room-manager.ts) → `transferHost()` — check `if (room.status !== 'lobby')` → `HOST_TRANSFER_NOT_ALLOWED`.
+- **Decisão:** transferência manual ("passar host") só permitida no status `'lobby'`. Fallback automático de host (quando host sai/desconecta) continua ativo em qualquer status.
+- **Por quê:** escolha de produto pra Sprint 1 — evita confusão de UX durante partida (host muda durante round → quem controla o `room:next_round`?). Mais simples conceitualmente pro MVP.
+- **Como reabrir:** se houver feedback real de uso ("queria ter passado o host no meio do jogo porque preciso sair"), remover o check de status em `transferHost()` é trivial (1 linha + ajustar 1 teste). Sem mudança de protocolo nem schema.
+
+---
+
 ## Prisma 7: migrar de v6 para v7
 
 - **Status atual:** Prisma 7.x já está **GA** (7.8.0 disponível em 2026-05-18). Estamos em `^6.0.0` resolvendo para 6.19.3.
