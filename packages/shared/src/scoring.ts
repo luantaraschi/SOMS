@@ -1,33 +1,32 @@
 /**
- * Pontuação (Sprint 1 — fórmula simplificada).
+ * Cálculo server-authoritative de pontos por guess.
  *
- * Sprint 1:
- *   - title hit: 100 base
- *   - artist hit: 60 base
- *   - + bônus de velocidade linear decrescente de 50 → 0 ao longo do round
+ * Modelo (ARCHITECTURE.md §9):
+ *   total = slot.basePoints + speed_bonus
+ *   speed_bonus = SPEED_BONUS_MAX × max(0, 1 − tIntoRoundMs / durationMs), arredondado
  *
- * NÃO implementado no Sprint 1 (ver ARCHITECTURE §9):
- *   - streak multiplier
- *   - mode multiplier (blind test 1.5x / 2x)
- *   - approx penalty (sem Levenshtein → sem penalidade)
- *   - playlist owner delay
+ * `isTie` é um marcador informativo apenas — empate ganha o MESMO que o
+ * primeiro fill do slot (sem bônus, sem penalidade).
+ *
+ * NÃO implementado no Sprint 1: streak multiplier, mode multiplier (blind
+ * test 1.5x/2x), approx penalty (sem Levenshtein), playlist owner delay.
  */
 
-import type { MatchedField } from './matching.js';
+import { SPEED_BONUS_MAX } from './constants.js';
+import type { Slot } from './slots.js';
 
-const BASE_TITLE = 100;
-const BASE_ARTIST = 60;
-const MAX_SPEED_BONUS = 50;
-
-export type ScoreInput = {
-  matchedField: MatchedField;
-  msIntoRound: number;
-  roundDurationMs: number;
+export type CalculateGuessScoreInput = {
+  slot: Slot;
+  /** ms desde `startedAt` em que o player acertou. */
+  tIntoRoundMs: number;
+  /** Duração total do round em ms (geralmente `ROUND_DURATION_MS`). */
+  durationMs: number;
+  /** True se este guess caiu na tie window de um slot já com 1+ winner. Informativo, não afeta pontos. */
+  isTie: boolean;
 };
 
-export function scoreGuess({ matchedField, msIntoRound, roundDurationMs }: ScoreInput): number {
-  const base = matchedField === 'title' ? BASE_TITLE : BASE_ARTIST;
-  const ratio = Math.max(0, 1 - msIntoRound / roundDurationMs);
-  const bonus = Math.round(MAX_SPEED_BONUS * ratio);
-  return base + bonus;
+export function calculateGuessScore(args: CalculateGuessScoreInput): number {
+  const ratio = Math.max(0, 1 - args.tIntoRoundMs / args.durationMs);
+  const bonus = Math.round(SPEED_BONUS_MAX * ratio);
+  return args.slot.basePoints + bonus;
 }

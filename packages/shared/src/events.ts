@@ -1,38 +1,35 @@
 /**
  * Contratos de eventos WS entre client (`apps/web`) e server (`apps/realtime`).
  *
- * Forma compatível com socket.io:
- *   `EventMap = { 'event:name': (payload, ack?) => void }`
+ * Forma compatível com socket.io: `EventMap = { 'event:name': (payload, ack?) => void }`
  *
- * Sprint 1 inclui o subset mínimo: criar sala, juntar, sair, iniciar partida,
- * loop de round (countdown → started → guess → reveal) e fim de partida.
+ * Sprint 1: inclui o subset mínimo do loop principal — criar/juntar sala,
+ * iniciar partida (com pre-load de tracks — ver `ARCHITECTURE.md §5.4`),
+ * countdown, round started, guess accepted (private) + slot filled (broadcast),
+ * round reveal, partida fim.
  *
- * Eventos do ARCHITECTURE §6 que **não** estão aqui (Sprint 2+):
+ * Modelo de slots (substitui o velho `GuessResult`):
+ *   - Cada track tem N slots ('title', 'artist', N×'feat' — ver slots.ts).
+ *   - Cada guess é classificado em um de 4 outcomes (ver `GuessOutcome`).
+ *   - Round encerra quando todos os slots têm winners E janela de empate
+ *     fechou (ver round-state.ts → `shouldEndRound`).
+ *   - Ver ARCHITECTURE.md §9 para spec completa.
+ *
+ * Eventos do ARCHITECTURE §6 **não** incluídos aqui (Sprint 2+):
  *   - room:kick, game:end (encerrar antes do tempo)
- *   - game:scores (placar entre rounds — Sprint 1 só emite score no round:reveal)
  *   - variações de RoundPayload (BLIND_TEST, WHO_SANG, COVER_REVEAL)
- *
- * `room:settings:update` / `room:settings:updated` foram **promovidos a Sprint 1**
- * com a revisão de escopo (Provider Deezer entrou; host precisa selecionar
- * gêneros/décadas no lobby antes de iniciar).
- *
- * Quando entrarem, ampliar os mapas `ClientToServerEvents` e
- * `ServerToClientEvents` aqui — esta é a fonte única de verdade do contrato.
  */
 
-import type { MatchedField } from './matching.js';
+import type { SlotKind } from './slots.js';
 
 // ============================================================
-//  ENUMS COMO STRING LITERALS (mantém paridade com Prisma)
+//  ENUMS COMO STRING LITERALS (paridade com Prisma)
 // ============================================================
 
 export type RoomMode = 'CLASSIC';
 // Sprint 2+ adicionará 'BLIND_TEST' | 'WHO_SANG' | 'PLAYLIST_WARS' | 'COVER_REVEAL' | 'CHAOS'
 
 export type RoomStatus = 'LOBBY' | 'PLAYING' | 'ENDED' | 'CLOSED';
-
-export type GuessResult = 'CORRECT' | 'WRONG' | 'RATE_LIMITED';
-// Sprint 2+ adicionará 'CLOSE' quando Levenshtein entrar
 
 export type ErrorCode =
   | 'ROOM_NOT_FOUND'
@@ -42,10 +39,41 @@ export type ErrorCode =
   | 'INVALID_STATE'
   | 'NICKNAME_INVALID'
   | 'GUESS_RATE_LIMITED'
-  | 'UNAUTHORIZED';
+  | 'UNAUTHORIZED'
+  | 'INSUFFICIENT_TRACKS'
+  | 'DEEZER_UNAVAILABLE_FOR_START';
 
 // ============================================================
-//  TIPOS AUXILIARES (snapshots, payloads compartilhados)
+//  GUESS OUTCOME — discriminated union (private ao guesser)
+// ============================================================
+
+/**
+ * Resultado de um guess. Comunicado **privadamente** ao autor via
+ * `game:guess:accepted`. Broadcasts públicos vão por `game:slot:filled`.
+ */
+export type GuessOutcome =
+  /** Acertou um slot livre — ganhou pontos (base + speed). */
+  | {
+      kind: 'hit';
+      slot: { kind: SlotKind; display: string };
+      points: number;
+      /** True se este guess caiu na tie window de um slot já com 1+ winner. */
+      isTie: boolean;
+    }
+  /** Slot já preenchido e janela de empate fechou — sem pontos. */
+  | {
+      kind: 'too_late';
+      slot: { kind: SlotKind; display: string };
+      /** Quem(s) pegou primeiro. */
+      winners: { nickname: string }[];
+    }
+  /** Não bateu em nenhum slot. */
+  | { kind: 'miss' }
+  /** Excedeu `GUESS_RATE_LIMIT_MS` — guess descartado. */
+  | { kind: 'rate_limited' };
+
+// ============================================================
+//  TIPOS AUXILIARES (snapshots e shapes compartilhados)
 // ============================================================
 
 export type RoomSettings = {
@@ -56,7 +84,7 @@ export type RoomSettings = {
 
 /**
  * Fonte de tracks de uma partida. Sprint 1 só tem `genre_decade`.
- * Sprint 2 adicionará variants `curated` (pool curado) e `playlist` (URL Deezer).
+ * Sprint 2 adicionará `curated` (pool) e `playlist` (Deezer URL).
  */
 export type TrackSource = {
   type: 'genre_decade';
@@ -110,14 +138,25 @@ export type PodiumEntry = {
   score: number;
 };
 
-export type FirstAnswerer = {
+/** Winner identificado publicamente em `game:slot:filled` e `game:round:reveal`. */
+export type SlotWinnerPublic = {
   userId: string;
-  field: MatchedField;
-  responseTime: number;
+  nickname: string;
+  pointsAwarded: number;
+  tIntoRoundMs: number;
+};
+
+/** Estado de um slot ao final do round, usado no reveal. */
+export type SlotFillPublic = {
+  kind: SlotKind;
+  /** Valor revelado (ex: "Pop", "Harry Styles"). */
+  display: string;
+  /** Winners do slot (1 = sem empate; >1 = empates dentro da TIE_WINDOW). Pode ser `[]` se ninguém acertou. */
+  winners: SlotWinnerPublic[];
 };
 
 // ============================================================
-//  PAYLOADS DE EVENTOS (entrada e saída tipadas, exportáveis)
+//  PAYLOADS DE EVENTOS
 // ============================================================
 
 export type RoomCreatePayload = {
@@ -132,9 +171,7 @@ export type RoomJoinPayload = {
   nickname: string;
 };
 
-export type RoomJoinAck =
-  | { ok: true }
-  | { ok: false; error: ErrorCode; message: string };
+export type RoomJoinAck = { ok: true } | { ok: false; error: ErrorCode; message: string };
 
 export type GameGuessPayload = {
   text: string;
@@ -161,26 +198,47 @@ export type RoomPlayerJoinedEvent = { player: Player };
 export type RoomPlayerLeftEvent = { userId: string };
 export type RoomHostChangedEvent = { newHostId: string };
 
+/**
+ * `game:preparing` — emitido em `room:start`, **antes do countdown**, enquanto
+ * o pre-load de URLs frescas roda (ver ARCHITECTURE.md §5.4 / SPRINT_1.md B5).
+ * UX no cliente: "Preparando partida...".
+ */
+export type GamePreparingEvent = { totalRounds: number };
+
 export type GameCountdownEvent = { secondsLeft: number };
 
 export type GameRoundStartedEvent = {
   roundIndex: number; // 1..totalRounds
   totalRounds: number;
   durationSeconds: number;
-  previewUrl: string;
+  previewUrl: string; // URL fresca via pre-load
 };
 
-export type GameGuessResultEvent = {
-  userId: string;
-  result: GuessResult;
-  score: number; // pontos ganhos com este guess (0 se WRONG/RATE_LIMITED)
-  matchedField: MatchedField | null;
+/** `game:guess:accepted` — **PRIVADO** ao autor. Confirmação + outcome. */
+export type GameGuessAcceptedEvent = {
+  outcome: GuessOutcome;
+};
+
+/**
+ * `game:slot:filled` — **BROADCAST**. Slot recém-preenchido OU novo winner
+ * dentro da tie window. Cliente atualiza placar e mostra animação de acerto.
+ */
+export type GameSlotFilledEvent = {
+  slotKind: SlotKind;
+  /** Valor revelado (ex: "Pop"). */
+  slotDisplay: string;
+  /** Winners deste broadcast — 1 elemento se `isFirstFill=true` (sem empate), 1+ se empate. */
+  winners: SlotWinnerPublic[];
+  /** True na 1ª vez que o slot é preenchido; false = winner(s) adicional(is) dentro da tie window. */
+  isFirstFill: boolean;
 };
 
 export type GameRoundRevealEvent = {
   track: TrackReveal;
+  /** Estado final dos slots da track. Slots sem winners aparecem com `winners: []`. */
+  slotFills: SlotFillPublic[];
+  /** Total acumulado + delta deste round, por player. */
   scores: ScoreDelta[];
-  firstAnswerers: FirstAnswerer[];
 };
 
 export type GameEndedEvent = {
@@ -213,9 +271,13 @@ export interface ServerToClientEvents {
   'room:player:left': (payload: RoomPlayerLeftEvent) => void;
   'room:host:changed': (payload: RoomHostChangedEvent) => void;
   'room:settings:updated': (payload: RoomSettingsUpdatedEvent) => void;
+  'game:preparing': (payload: GamePreparingEvent) => void;
   'game:countdown': (payload: GameCountdownEvent) => void;
   'game:round:started': (payload: GameRoundStartedEvent) => void;
-  'game:guess:result': (payload: GameGuessResultEvent) => void;
+  /** Privado — só o guesser recebe. */
+  'game:guess:accepted': (payload: GameGuessAcceptedEvent) => void;
+  /** Broadcast — slot preenchido ou empate dentro da tie window. */
+  'game:slot:filled': (payload: GameSlotFilledEvent) => void;
   'game:round:reveal': (payload: GameRoundRevealEvent) => void;
   'game:ended': (payload: GameEndedEvent) => void;
   error: (payload: ErrorEvent) => void;

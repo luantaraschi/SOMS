@@ -1,39 +1,67 @@
 import { describe, expect, it } from 'vitest';
-import { scoreGuess } from '../src/scoring.js';
+import {
+  POINTS_ARTIST,
+  POINTS_FEAT,
+  POINTS_TITLE,
+  ROUND_DURATION_MS,
+  SPEED_BONUS_MAX,
+} from '../src/constants.js';
+import { calculateGuessScore } from '../src/scoring.js';
+import type { Slot } from '../src/slots.js';
 
-describe('scoreGuess', () => {
-  const ROUND_MS = 20_000;
+const titleSlot: Slot = { kind: 'title', value: 't', display: 'T', basePoints: POINTS_TITLE };
+const artistSlot: Slot = { kind: 'artist', value: 'a', display: 'A', basePoints: POINTS_ARTIST };
+const featSlot: Slot = { kind: 'feat', value: 'f', display: 'F', basePoints: POINTS_FEAT };
 
-  it('gives full speed bonus (50) at the very start of the round', () => {
+describe('calculateGuessScore', () => {
+  it('título no início do round → base + bonus máximo (150)', () => {
     expect(
-      scoreGuess({ matchedField: 'title', msIntoRound: 0, roundDurationMs: ROUND_MS }),
-    ).toBe(150); // 100 base + 50 bonus
+      calculateGuessScore({
+        slot: titleSlot,
+        tIntoRoundMs: 0,
+        durationMs: ROUND_DURATION_MS,
+        isTie: false,
+      }),
+    ).toBe(POINTS_TITLE + SPEED_BONUS_MAX); // 100 + 50 = 150
   });
 
-  it('gives half speed bonus at midpoint of round', () => {
+  it('artista no meio do round → base + bonus pela metade (85)', () => {
     expect(
-      scoreGuess({ matchedField: 'title', msIntoRound: ROUND_MS / 2, roundDurationMs: ROUND_MS }),
-    ).toBe(125); // 100 base + 25 bonus
+      calculateGuessScore({
+        slot: artistSlot,
+        tIntoRoundMs: ROUND_DURATION_MS / 2,
+        durationMs: ROUND_DURATION_MS,
+        isTie: false,
+      }),
+    ).toBe(POINTS_ARTIST + Math.round(SPEED_BONUS_MAX / 2)); // 60 + 25 = 85
   });
 
-  it('gives zero speed bonus at end of round', () => {
+  it('feat no fim do round → só base, bonus 0 (40)', () => {
     expect(
-      scoreGuess({ matchedField: 'title', msIntoRound: ROUND_MS, roundDurationMs: ROUND_MS }),
-    ).toBe(100); // 100 base + 0 bonus
+      calculateGuessScore({
+        slot: featSlot,
+        tIntoRoundMs: ROUND_DURATION_MS,
+        durationMs: ROUND_DURATION_MS,
+        isTie: false,
+      }),
+    ).toBe(POINTS_FEAT); // 40 + 0 = 40
   });
 
-  it('uses 60 base for artist match', () => {
-    expect(
-      scoreGuess({ matchedField: 'artist', msIntoRound: 0, roundDurationMs: ROUND_MS }),
-    ).toBe(110); // 60 base + 50 bonus
-    expect(
-      scoreGuess({ matchedField: 'artist', msIntoRound: ROUND_MS, roundDurationMs: ROUND_MS }),
-    ).toBe(60); // 60 base + 0 bonus
+  it('empate ganha mesma pontuação que primeiro (isTie informativo, não afeta)', () => {
+    const inp = { slot: titleSlot, tIntoRoundMs: 5_000, durationMs: ROUND_DURATION_MS };
+    const first = calculateGuessScore({ ...inp, isTie: false });
+    const tie = calculateGuessScore({ ...inp, isTie: true });
+    expect(tie).toBe(first);
   });
 
-  it('clamps speed bonus at 0 when msIntoRound exceeds duration (defensive)', () => {
+  it('clamp defensivo: tIntoRoundMs > duration → bonus 0, sem score negativo', () => {
     expect(
-      scoreGuess({ matchedField: 'title', msIntoRound: 25_000, roundDurationMs: ROUND_MS }),
-    ).toBe(100); // não vira negativo
+      calculateGuessScore({
+        slot: titleSlot,
+        tIntoRoundMs: ROUND_DURATION_MS * 2,
+        durationMs: ROUND_DURATION_MS,
+        isTie: false,
+      }),
+    ).toBe(POINTS_TITLE);
   });
 });
