@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import { LobbyView } from '@/components/lobby/LobbyView';
-import { SmButton, SmCard } from '@/components/primitives';
+import { SmBrand, SmButton, SmCard } from '@/components/primitives';
 import { useLobbyConnection } from '@/hooks/useLobbyConnection';
 import { useRoom } from '@/stores/room';
 
@@ -33,9 +33,12 @@ export default function LobbyPage({
 function LobbyLoading({ code }: { code: string }): React.ReactElement {
   return (
     <main className="paper min-h-screen flex items-center justify-center p-8">
-      <div className="text-center">
-        <p className="t-label mb-4">CONECTANDO</p>
-        <p className="t-display t-mono">{code}</p>
+      <div className="text-center flex flex-col items-center gap-8">
+        <SmBrand size="md" />
+        <div>
+          <p className="t-label mb-2">conectando</p>
+          <p className="t-display t-mono">{code}</p>
+        </div>
       </div>
     </main>
   );

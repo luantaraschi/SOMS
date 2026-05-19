@@ -21,6 +21,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import {
+  SmBrand,
   SmButton,
   SmCard,
   SmInput,
@@ -227,8 +228,10 @@ function HomeContent(): React.ReactElement {
   return (
     <main className="paper flex flex-col items-center justify-center p-8 gap-12">
       <div className="text-center">
-        <h1 className="t-mega">SOMS</h1>
-        <p className="t-slogan mt-2">todo mundo acha que sabe.</p>
+        <h1>
+          <SmBrand size="lg" />
+        </h1>
+        <p className="t-slogan mt-6">todo mundo acha que sabe.</p>
       </div>
 
       <SmCard tilt="l" className="w-full" style={{ maxWidth: '440px' }}>
