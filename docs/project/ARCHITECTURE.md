@@ -120,7 +120,7 @@ model User {
 
 model Room {
   id        String     @id @default(cuid())
-  code      String     @unique  // ex: "ABCD12" — 6 chars
+  code      String     @unique  // ex: "ABKM" — 4 chars, alfabeto A-HJ-NP-Z (sem I/O)
   hostId    String
   host      User       @relation("RoomHost", fields: [hostId], references: [id])
   mode      RoomMode

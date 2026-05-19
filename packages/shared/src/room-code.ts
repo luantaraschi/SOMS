@@ -6,7 +6,7 @@
  */
 import { ROOM_CODE_LENGTH } from './constants.js';
 
-const ROOM_CODE_REGEX = /^[A-HJ-NP-Z]{6}$/;
+const ROOM_CODE_REGEX = /^[A-HJ-NP-Z]{4}$/;
 
 export type RoomCodeInvalidReason = 'empty' | 'wrong_length' | 'invalid_chars';
 

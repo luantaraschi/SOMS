@@ -218,7 +218,7 @@ Quando este sprint estiver fechado, a Fase 2 do PRD começa.
 
 #### B2. Room manager em memória
 - [ ] Classe `RoomManager` (em memória, sem Redis ainda — Redis fica pra sprint 2)
-- [ ] `createRoom({ hostId, mode, settings })` → gera code de 6 chars único
+- [ ] `createRoom({ hostId, mode, settings })` → gera code de 4 chars único
 - [ ] `joinRoom(code, user)` → adiciona player
 - [ ] `leaveRoom(code, userId)`
 - [ ] Cada sala tem state machine: LOBBY → COUNTDOWN → PLAYING → REVEAL → ENDED

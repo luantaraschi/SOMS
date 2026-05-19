@@ -5,7 +5,7 @@ import {
   generateUniqueRoomCode,
 } from '../src/rooms/code-generator.js';
 
-const CODE_REGEX = /^[A-HJ-NP-Z]{6}$/;
+const CODE_REGEX = /^[A-HJ-NP-Z]{4}$/;
 
 describe('code-generator', () => {
   it('ROOM_CODE_ALPHABET tem exatamente 24 letras sem I nem O', () => {
@@ -14,10 +14,10 @@ describe('code-generator', () => {
     expect(ROOM_CODE_ALPHABET).not.toContain('O');
   });
 
-  it('generateRoomCode retorna 6 caracteres maiúsculos do alfabeto válido', () => {
+  it('generateRoomCode retorna 4 caracteres maiúsculos do alfabeto válido', () => {
     const code = generateRoomCode();
     expect(code).toMatch(CODE_REGEX);
-    expect(code.length).toBe(6);
+    expect(code.length).toBe(4);
   });
 
   it('1000 chamadas de generateRoomCode produzem todos os códigos no formato', () => {

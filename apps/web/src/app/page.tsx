@@ -220,7 +220,7 @@ export default function HomePage(): React.ReactElement {
               mono
               value={code}
               onChange={onCodeChange}
-              placeholder="ABKMNP"
+              placeholder="ABKM"
               disabled={isSubmitting}
               maxLength={ROOM_CODE_LENGTH}
             />

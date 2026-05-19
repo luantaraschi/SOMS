@@ -275,21 +275,21 @@ describe('GameSessionStore', () => {
   it('startSession armazena e getSession devolve', () => {
     const store = new GameSessionStore({ logger: silentLogger });
     const session = store.startSession({
-      code: 'ABCDEF',
+      code: 'ABCD',
       queue: [],
       settings: baseSettings,
     });
-    expect(session.code).toBe('ABCDEF');
+    expect(session.code).toBe('ABCD');
     expect(session.completedRounds).toEqual([]);
     expect(session.currentRound).toBeUndefined();
-    expect(store.getSession('ABCDEF')).toBe(session);
+    expect(store.getSession('ABCD')).toBe(session);
   });
 
   it('endSession remove', () => {
     const store = new GameSessionStore({ logger: silentLogger });
-    store.startSession({ code: 'ABCDEF', queue: [], settings: baseSettings });
-    store.endSession('ABCDEF');
-    expect(store.getSession('ABCDEF')).toBeNull();
+    store.startSession({ code: 'ABCD', queue: [], settings: baseSettings });
+    store.endSession('ABCD');
+    expect(store.getSession('ABCD')).toBeNull();
   });
 
   it('getAllSessions retorna lista', () => {

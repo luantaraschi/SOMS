@@ -149,7 +149,7 @@ describe('socket-integration — fluxo de sala', () => {
     });
     expect(ack.ok).toBe(true);
     if (!ack.ok) return;
-    expect(ack.code).toMatch(/^[A-HJ-NP-Z]{6}$/);
+    expect(ack.code).toMatch(/^[A-HJ-NP-Z]{4}$/);
     expect(ack.snapshot.status).toBe('lobby');
     expect(ack.snapshot.hostUserId).toBe(HOST_USER_ID);
     expect(ack.snapshot.players).toHaveLength(1);

@@ -36,7 +36,9 @@ export const MAX_NICKNAME_LENGTH = 20;
 // ============================================================
 //  Sala
 // ============================================================
-export const ROOM_CODE_LENGTH = 6;
+// 4 chars × 24 letras = 331_776 combinações. Suficiente pra qualquer escala
+// prevista do produto. Reduzido de 6 → 4 por encaixe visual no card hero.
+export const ROOM_CODE_LENGTH = 4;
 
 /** Décadas disponíveis para o picker de track source (Sprint 1). */
 export const DECADES = [1990, 2000, 2010, 2020] as const;

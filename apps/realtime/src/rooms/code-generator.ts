@@ -3,7 +3,8 @@ import { ROOM_CODE_LENGTH } from '@soms/shared';
 
 /**
  * Alfabeto pra códigos de sala — 24 letras maiúsculas, sem I e O
- * pra evitar ambiguidade com 1 e 0. Espaço: 24^6 = 191.102.976.
+ * pra evitar ambiguidade com 1 e 0. Espaço: 24^4 = 331.776 combinações
+ * (suficiente pra qualquer escala prevista; ver TECH_DEBT.md).
  */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
@@ -20,8 +21,8 @@ export function generateRoomCode(): string {
 
 /**
  * Gera código único — não presente em `existing`. Throw após `maxAttempts` colisões.
- * Como o espaço é vasto (191M), colisões só acontecem em testes que pre-populam
- * o Set com quase todos os códigos possíveis.
+ * Espaço de 332k. Colisões reais começam a ser frequentes em escala alta
+ * (>5k salas simultâneas); pro Sprint 1 não é preocupação real.
  */
 export function generateUniqueRoomCode(
   existing: Set<string>,

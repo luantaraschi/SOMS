@@ -122,7 +122,7 @@ export default function TestDesignPage(): React.ReactElement {
               <span className="t-caption">aguardando mais 2 jogadores...</span>
             </Row>
             <Row label="t-mono · JetBrains Mono 700 tabular">
-              <span className="t-mono text-2xl">ABKMNP · 00:27</span>
+              <span className="t-mono text-2xl">ABKM · 00:27</span>
             </Row>
             <Row label="t-slogan · Inter italic 500 ink-soft">
               <span className="t-slogan">todo mundo acha que sabe.</span>
@@ -219,7 +219,7 @@ export default function TestDesignPage(): React.ReactElement {
             </SmCard>
             <SmCard tilt="r" style={{ background: 'var(--primary)' }}>
               <div className="t-label">round 3 de 10</div>
-              <div className="t-mega mt-2 t-mono">ABKMNP</div>
+              <div className="t-mega mt-2 t-mono">ABKM</div>
               <p className="t-caption mt-2 on-light">
                 código pra entrar nessa partida.
               </p>
@@ -244,7 +244,7 @@ export default function TestDesignPage(): React.ReactElement {
             <div className="on-light text-center">
               <SmLabel>código da sala</SmLabel>
               <div className="t-mega t-mono mt-2" style={{ color: '#FFF' }}>
-                ABKMNP
+                ABKM
               </div>
               <p className="t-body mt-4" style={{ color: '#FFF' }}>
                 copia e cola pros seus amigos.

@@ -4,6 +4,15 @@ Lista curta de débitos técnicos conhecidos. Cada item tem: gatilho, ação, pr
 
 ---
 
+## `ROOM_CODE_LENGTH` reduzido de 6 → 4 em C2
+
+- **Onde:** [`packages/shared/src/constants.ts`](../../packages/shared/src/constants.ts) → `ROOM_CODE_LENGTH = 4`.
+- **Decisão:** code de 4 chars (alfabeto 24 letras = 331.776 combinações) é suficiente pra qualquer escala prevista do produto. Reduzido do original 6 (191M combinações) por restrição visual — não cabia em `t-mega t-mono` no card hero em `/test-design`.
+- **Quando voltar pra 5 ou 6:** se um dia houver risco real de colisão (>10k lobbies simultâneos no servidor — bem além do MVP), ou se medirmos taxa de "code já existe" no `generateUniqueRoomCode`. O alphabet collision rate em 5k salas concorrentes = ~1.5%; em 10k = ~3% (paradoxo do aniversário). Aceitável até lá.
+- **Como reverter:** `ROOM_CODE_LENGTH = 6` em constants.ts, ajustar regex em `room-code.ts`, atualizar 8 hardcodes nos testes (já catalogados). Nenhuma migração de dados — codes em memória apenas.
+
+---
+
 ## Transferência manual de host restrita a `lobby` (Sprint 1)
 
 - **Onde:** [`apps/realtime/src/rooms/room-manager.ts`](../../apps/realtime/src/rooms/room-manager.ts) → `transferHost()` — check `if (room.status !== 'lobby')` → `HOST_TRANSFER_NOT_ALLOWED`.

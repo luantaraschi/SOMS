@@ -91,7 +91,7 @@ describe('RoomManager.createRoom', () => {
         settings: defaultSettings,
       });
       if (!r.ok) throw new Error('createRoom failed');
-      expect(r.room.code).toMatch(/^[A-HJ-NP-Z]{6}$/);
+      expect(r.room.code).toMatch(/^[A-HJ-NP-Z]{4}$/);
       codes.add(r.room.code);
     }
     expect(codes.size).toBe(100);
@@ -210,7 +210,7 @@ describe('RoomManager.joinRoom', () => {
   });
 
   it('join em sala inexistente → ROOM_NOT_FOUND', () => {
-    const r = manager.joinRoom({ code: 'XXXXXX', userId: 'u2', nickname: 'Bob' });
+    const r = manager.joinRoom({ code: 'XXXX', userId: 'u2', nickname: 'Bob' });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.code).toBe('ROOM_NOT_FOUND');
@@ -303,7 +303,7 @@ describe('RoomManager.leaveRoom', () => {
   });
 
   it('sala inexistente → ROOM_NOT_FOUND', () => {
-    const r = manager.leaveRoom('XXXXXX', 'host');
+    const r = manager.leaveRoom('XXXX', 'host');
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.code).toBe('ROOM_NOT_FOUND');
