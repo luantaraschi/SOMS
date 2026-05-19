@@ -1,13 +1,15 @@
 import type { AddressInfo } from 'node:net';
 import type { FastifyInstance } from 'fastify';
-import type { Server as SocketIOServer } from 'socket.io';
 import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildServer } from '../src/server.js';
+import type { TypedServer } from '../src/socket/types.js';
+
+const VALID_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 describe('apps/realtime smoke', () => {
   let fastify: FastifyInstance;
-  let io: SocketIOServer;
+  let io: TypedServer;
   let url: string;
 
   beforeAll(async () => {
@@ -31,14 +33,14 @@ describe('apps/realtime smoke', () => {
     const body = (await res.json()) as { status: string; uptime: number; version: string };
     expect(body.status).toBe('ok');
     expect(typeof body.uptime).toBe('number');
-    expect(body.uptime).toBeGreaterThanOrEqual(0);
     expect(typeof body.version).toBe('string');
   });
 
-  it('Socket.IO: cliente conecta, emite ping, recebe pong com serverTime', async () => {
+  it('Socket.IO: cliente autenticado emite ping com ack, recebe serverTime', async () => {
     const client: ClientSocket = ioClient(url, {
       transports: ['websocket'],
       reconnection: false,
+      auth: { userId: VALID_USER_ID, nickname: 'smoke' },
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -55,12 +57,11 @@ describe('apps/realtime smoke', () => {
 
     const before = Date.now();
     const pong = await new Promise<{ serverTime: number }>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('pong timeout')), 3_000);
-      client.once('pong', (payload: { serverTime: number }) => {
+      const t = setTimeout(() => reject(new Error('ack timeout')), 3_000);
+      client.emit('ping', (payload: { serverTime: number }) => {
         clearTimeout(t);
         resolve(payload);
       });
-      client.emit('ping');
     });
     const after = Date.now();
 

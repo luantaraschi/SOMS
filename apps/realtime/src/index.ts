@@ -3,9 +3,10 @@ import { logger } from './logger.js';
 import { buildServer } from './server.js';
 
 const SHUTDOWN_TIMEOUT_MS = 5_000;
+const TICK_INTERVAL_MS = 1_000;
 
 async function main(): Promise<void> {
-  const { fastify, io } = await buildServer();
+  const { fastify, io, manager } = await buildServer();
 
   await fastify.listen({ port: config.port, host: '0.0.0.0' });
   logger.info(
@@ -13,11 +14,17 @@ async function main(): Promise<void> {
     'realtime up',
   );
 
+  const tickInterval = setInterval(() => {
+    manager.tick(Date.now());
+  }, TICK_INTERVAL_MS);
+  tickInterval.unref();
+
   let shuttingDown = false;
   const shutdown = async (signal: string): Promise<void> => {
     if (shuttingDown) return;
     shuttingDown = true;
     logger.info({ signal }, 'shutdown signal received');
+    clearInterval(tickInterval);
 
     const force = setTimeout(() => {
       logger.error('shutdown timeout exceeded — forcing exit');

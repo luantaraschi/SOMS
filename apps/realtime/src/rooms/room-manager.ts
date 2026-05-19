@@ -1,10 +1,7 @@
-import {
-  DISCONNECT_GRACE_MS,
-  MAX_NICKNAME_LENGTH,
-  MIN_NICKNAME_LENGTH,
-} from '@soms/shared';
+import { DISCONNECT_GRACE_MS } from '@soms/shared';
 import type { Logger } from 'pino';
 import { generateUniqueRoomCode } from './code-generator.js';
+import { validateNickname } from './nickname.js';
 import type {
   CreateRoomInput,
   JoinRoomInput,
@@ -170,6 +167,30 @@ export class RoomManager {
     room.players.delete(targetUserId);
     this.logger.info({ code, hostUserId, targetUserId }, 'player kicked');
     this.events.onPlayerLeft?.(room, target, 'kick');
+    return { ok: true, room };
+  }
+
+  updateSettings(
+    code: string,
+    hostUserId: string,
+    patch: Partial<import('@soms/shared').RoomSettings>,
+  ): Ok<{ room: Room }> | Err {
+    const room = this.rooms.get(code);
+    if (!room) return { ok: false, error: { code: 'ROOM_NOT_FOUND' } };
+    if (room.status !== 'lobby') return { ok: false, error: { code: 'ROOM_IN_PROGRESS' } };
+    if (room.hostUserId !== hostUserId) return { ok: false, error: { code: 'NOT_HOST' } };
+
+    if (patch.totalRounds !== undefined) room.settings.totalRounds = patch.totalRounds;
+    if (patch.roundDurationSeconds !== undefined) {
+      room.settings.roundDurationSeconds = patch.roundDurationSeconds;
+    }
+    if (patch.trackSource !== undefined) {
+      room.settings.trackSource = {
+        ...room.settings.trackSource,
+        ...patch.trackSource,
+      };
+    }
+    this.logger.info({ code, patch }, 'settings updated');
     return { ok: true, room };
   }
 
@@ -355,24 +376,3 @@ export class RoomManager {
   }
 }
 
-function validateNickname(name: string): RoomError | null {
-  const trimmed = name.trim();
-  if (trimmed.length < MIN_NICKNAME_LENGTH) {
-    return { code: 'NICKNAME_INVALID', reason: `length < ${MIN_NICKNAME_LENGTH}` };
-  }
-  if (trimmed.length > MAX_NICKNAME_LENGTH) {
-    return { code: 'NICKNAME_INVALID', reason: `length > ${MAX_NICKNAME_LENGTH}` };
-  }
-  if (hasControlChar(trimmed)) {
-    return { code: 'NICKNAME_INVALID', reason: 'control characters not allowed' };
-  }
-  return null;
-}
-
-function hasControlChar(s: string): boolean {
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c <= 0x1f || c === 0x7f) return true;
-  }
-  return false;
-}
