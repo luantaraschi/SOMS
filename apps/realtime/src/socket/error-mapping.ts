@@ -1,4 +1,5 @@
-import type { ServerError } from '@soms/shared';
+import { insufficientTracksMessage, type ServerError } from '@soms/shared';
+import type { PreloadError, SelectTracksError } from '../game/index.js';
 import type { RoomError } from '../rooms/types.js';
 
 /**
@@ -67,6 +68,38 @@ export function mapRoomErrorToServerError(err: RoomError): ServerError {
       return {
         code: 'CANNOT_TRANSFER_TO_SELF',
         message: 'você já é o host.',
+      };
+  }
+}
+
+export function mapSelectErrorToServerError(err: SelectTracksError): ServerError {
+  switch (err.code) {
+    case 'INSUFFICIENT_TRACKS':
+      return {
+        code: 'INSUFFICIENT_TRACKS',
+        message: insufficientTracksMessage(err.available),
+        details: { available: err.available, requested: err.requested },
+      };
+    case 'NO_TRACKS_MATCHED':
+      return {
+        code: 'INSUFFICIENT_TRACKS',
+        message: insufficientTracksMessage(0),
+      };
+  }
+}
+
+export function mapPreloadErrorToServerError(err: PreloadError): ServerError {
+  switch (err.code) {
+    case 'DEEZER_UNAVAILABLE':
+      return {
+        code: 'DEEZER_UNAVAILABLE_FOR_START',
+        message: 'o deezer não tá respondendo agora. tenta de novo em alguns segundos.',
+      };
+    case 'INSUFFICIENT_FRESH_TRACKS':
+      return {
+        code: 'INSUFFICIENT_TRACKS',
+        message: `algumas músicas saíram do ar. consegui só ${err.got} de ${err.needed}. tenta com mais gêneros ou décadas.`,
+        details: { got: err.got, needed: err.needed },
       };
   }
 }

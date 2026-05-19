@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { Server as SocketIOServer } from 'socket.io';
 import { config } from './config.js';
+import { GameSessionStore } from './game/session-store.js';
 import { logger } from './logger.js';
 import { registerCors } from './plugins/cors.js';
 import { RoomManager } from './rooms/room-manager.js';
@@ -22,6 +23,7 @@ export type BuiltServer = {
   io: TypedServer;
   manager: RoomManager;
   broadcaster: Broadcaster;
+  gameSessionStore: GameSessionStore;
 };
 
 export async function buildServer(): Promise<BuiltServer> {
@@ -51,6 +53,7 @@ export async function buildServer(): Promise<BuiltServer> {
     logger,
     events: broadcaster.asRoomManagerEvents(),
   });
+  const gameSessionStore = new GameSessionStore({ logger });
 
   io.on('connection', (socket) => {
     const auth = validateAuth(socket);
@@ -86,7 +89,12 @@ export async function buildServer(): Promise<BuiltServer> {
       }
     });
 
-    registerAllHandlers(socket, { manager, broadcaster, logger });
+    registerAllHandlers(socket, {
+      manager,
+      broadcaster,
+      gameSessionStore,
+      logger,
+    });
 
     socket.on('disconnect', (reason) => {
       logger.info(
@@ -100,7 +108,7 @@ export async function buildServer(): Promise<BuiltServer> {
     });
   });
 
-  return { fastify, io, manager, broadcaster };
+  return { fastify, io, manager, broadcaster, gameSessionStore };
 }
 
 /**

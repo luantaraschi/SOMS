@@ -28,6 +28,11 @@ export class Broadcaster {
     private readonly logger: Logger,
   ) {}
 
+  /** Broadcaster operator pra todos os sockets no canal da sala. */
+  toRoom(code: string): ReturnType<TypedServer['to']> {
+    return this.io.to(roomChannel(code));
+  }
+
   asRoomManagerEvents(): RoomManagerEvents {
     return {
       onPlayerJoined: (room, player) => {
