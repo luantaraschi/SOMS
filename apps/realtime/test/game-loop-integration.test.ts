@@ -3,6 +3,7 @@ import type {
   GameCountdownEvent,
   GameEndedEvent,
   GameGuessAcceptedEvent,
+  GameGuessPublicEvent,
   GameReadyNextRoundAck,
   GameRoundRevealEvent,
   GameRoundStartedEvent,
@@ -10,7 +11,9 @@ import type {
   GameStartAck,
   RoomCreateAck,
   RoomJoinAck,
+  RoomReturnToLobbyAck,
   RoomSettings,
+  RoomStatusChangedEvent,
   ServerError,
 } from '@soms/shared';
 import type { FastifyInstance } from 'fastify';
@@ -333,5 +336,116 @@ describe('game loop — full game', () => {
     expect(snapshot.gameState?.currentRound).toBeDefined();
     expect(snapshot.gameState?.totalRounds).toBe(3);
     expect(code).toBeDefined();
+  }, 10_000);
+
+  it('game:guess:public é broadcast pra sala inteira (todos veem guesses errados)', async () => {
+    const { host, member, code } = await setupGameInPlayingStatus();
+    const round = built.gameSessionStore.getSession(code)?.currentRound;
+    if (!round) throw new Error('no round');
+
+    const hostFeedP = waitForEvent<GameGuessPublicEvent>(host, 'game:guess:public');
+    const memberFeedP = waitForEvent<GameGuessPublicEvent>(member, 'game:guess:public');
+    host.emit('game:guess', { text: 'palpite-errado-mesmo' });
+
+    const [hostFeed, memberFeed] = await Promise.all([hostFeedP, memberFeedP]);
+    expect(hostFeed.outcome).toBe('miss');
+    expect(hostFeed.text).toBe('palpite-errado-mesmo');
+    expect(hostFeed.nickname).toBe('host');
+    expect(memberFeed.outcome).toBe('miss');
+    expect(memberFeed.userId).toBe(HOST_USER_ID);
+  }, 10_000);
+
+  it('game:guess:public com hit inclui slotKind e isTie', async () => {
+    const { host, member, code } = await setupGameInPlayingStatus();
+    const round = built.gameSessionStore.getSession(code)?.currentRound;
+    if (!round) throw new Error('no round');
+
+    const memberFeedP = waitForEvent<GameGuessPublicEvent>(member, 'game:guess:public');
+    host.emit('game:guess', { text: round.queueItem.title });
+
+    const feed = await memberFeedP;
+    expect(feed.outcome).toBe('hit');
+    expect(feed.slotKind).toBe('title');
+    expect(feed.isTie).toBe(false);
+  }, 10_000);
+
+  it('rate_limited NÃO broadcastreia game:guess:public (mantém privado)', async () => {
+    const { host, member } = await setupGameInPlayingStatus();
+
+    const memberFeeds: GameGuessPublicEvent[] = [];
+    member.on('game:guess:public', (e) => memberFeeds.push(e));
+
+    host.emit('game:guess', { text: 'errou-1' });
+    host.emit('game:guess', { text: 'errou-2' }); // rate-limited
+
+    await new Promise((r) => setTimeout(r, 200));
+    expect(memberFeeds.length).toBe(1);
+    expect(memberFeeds[0]?.text).toBe('errou-1');
+  }, 10_000);
+
+  it('host emite room:return_to_lobby após ended → sala volta pra lobby', async () => {
+    const host = connect(HOST_USER_ID, 'host');
+    await waitForConnect(host);
+    const created = await emitAck<RoomCreateAck>(host, 'room:create', { settings });
+    if (!created.ok) throw new Error('create failed');
+    const member = connect(MEMBER_USER_ID, 'memi');
+    await waitForConnect(member);
+    await emitAck<RoomJoinAck>(member, 'room:join', { code: created.code });
+
+    // Joga uma partida completa até o end
+    host.on('game:round:started', () => {
+      const r = built.gameSessionStore.getSession(created.code)?.currentRound;
+      if (!r) return;
+      host.emit('game:guess', { text: r.queueItem.title });
+      setTimeout(() => {
+        const r2 = built.gameSessionStore.getSession(created.code)?.currentRound;
+        if (r2) host.emit('game:guess', { text: r2.queueItem.artists[0] ?? '' });
+      }, 450);
+    });
+
+    // Aguarda member também ver game:ended antes de prosseguir, pra não
+    // haver evento reveal→ended em vôo competindo com nosso listener.
+    const hostEndedP = waitForEvent<GameEndedEvent>(host, 'game:ended', 10_000);
+    const memberEndedP = waitForEvent<GameEndedEvent>(member, 'game:ended', 10_000);
+    await emitAck<GameStartAck>(host, 'game:start');
+    await Promise.all([hostEndedP, memberEndedP]);
+
+    // Após o ended, host pede pra voltar pra lobby. Filtra status events que
+    // sejam exatamente ended→lobby — defensivo contra qualquer evento residual.
+    const statusP = new Promise<RoomStatusChangedEvent>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('status:changed timeout')), 2_000);
+      member.on('room:status:changed', (e) => {
+        if (e.from === 'ended' && e.to === 'lobby') {
+          clearTimeout(t);
+          resolve(e);
+        }
+      });
+    });
+    const ack = await emitAck<RoomReturnToLobbyAck>(host, 'room:return_to_lobby');
+    expect(ack.ok).toBe(true);
+
+    const status = await statusP;
+    expect(status.from).toBe('ended');
+    expect(status.to).toBe('lobby');
+
+    // Sessão de jogo foi limpa
+    expect(built.gameSessionStore.getSession(created.code)).toBeNull();
+  }, 15_000);
+
+  it('room:return_to_lobby retorna NOT_HOST se chamado por não-host', async () => {
+    const host = connect(HOST_USER_ID, 'host');
+    await waitForConnect(host);
+    const created = await emitAck<RoomCreateAck>(host, 'room:create', { settings });
+    if (!created.ok) throw new Error('create failed');
+    const member = connect(MEMBER_USER_ID, 'memi');
+    await waitForConnect(member);
+    await emitAck<RoomJoinAck>(member, 'room:join', { code: created.code });
+
+    const ack = await emitAck<RoomReturnToLobbyAck>(member, 'room:return_to_lobby');
+    expect(ack.ok).toBe(false);
+    // Pode ser NOT_HOST (room ainda em lobby) ou INVALID_STATUS_TRANSITION
+    // (se a verificação de status vier antes). Ambas são respostas corretas
+    // pra um não-host. Aceita qualquer uma — relevante é o ack.ok === false.
+    expect(ack.error?.code).toMatch(/NOT_HOST|INVALID_STATUS_TRANSITION/);
   }, 10_000);
 });

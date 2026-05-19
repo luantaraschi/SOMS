@@ -303,6 +303,32 @@ export type GameEndedEvent = {
   durationMs: number;
 };
 
+/**
+ * Broadcast público de cada guess processado, pra todos verem todos os
+ * guesses no feed (incluindo errados). Privado pra autor continua em
+ * `game:guess:accepted` (mais detalhado).
+ *
+ * `rate_limited` não broadcastreia — ruído inútil.
+ */
+export type GameGuessPublicEvent = {
+  userId: string;
+  nickname: string;
+  text: string;
+  outcome: 'hit' | 'miss' | 'too_late';
+  /** Presente só quando outcome === 'hit' ou 'too_late'. */
+  slotKind?: SlotKind;
+  /** Presente só quando outcome === 'hit'. */
+  isTie?: boolean;
+  /** Server-side absolute timestamp. */
+  timestamp: number;
+};
+
+// ============================================================
+//  ROOM — return_to_lobby (host após game ended)
+// ============================================================
+
+export type RoomReturnToLobbyAck = { ok: boolean; error?: ServerError };
+
 // ============================================================
 //  UTILITÁRIO — ping
 // ============================================================
@@ -332,6 +358,7 @@ export interface ClientToServerEvents {
   'game:start': (ack: (res: GameStartAck) => void) => void;
   'game:guess': (payload: GameGuessPayload) => void;
   'game:ready_next_round': (ack: (res: GameReadyNextRoundAck) => void) => void;
+  'room:return_to_lobby': (ack: (res: RoomReturnToLobbyAck) => void) => void;
 
   // Utilitário
   ping: (ack: (res: PingAck) => void) => void;
@@ -359,6 +386,7 @@ export interface ServerToClientEvents {
   'game:slot:filled': (payload: GameSlotFilledEvent) => void;
   'game:round:reveal': (payload: GameRoundRevealEvent) => void;
   'game:ended': (payload: GameEndedEvent) => void;
+  'game:guess:public': (payload: GameGuessPublicEvent) => void;
 
   // Erros
   error: (payload: ServerError) => void;

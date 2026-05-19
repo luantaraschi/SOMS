@@ -7,6 +7,7 @@ import { registerRoomCreateHandler } from './room-create.js';
 import { registerRoomJoinHandler } from './room-join.js';
 import { registerRoomKickHandler } from './room-kick.js';
 import { registerRoomLeaveHandler } from './room-leave.js';
+import { registerRoomReturnToLobbyHandler } from './room-return-to-lobby.js';
 import { registerRoomSettingsUpdateHandler } from './room-settings-update.js';
 import { registerRoomTransferHostHandler } from './room-transfer-host.js';
 import type { HandlerContext } from './types.js';
@@ -19,6 +20,7 @@ export function registerAllHandlers(socket: TypedSocket, ctx: HandlerContext): v
   registerRoomKickHandler(socket, ctx);
   registerRoomTransferHostHandler(socket, ctx);
   registerRoomSettingsUpdateHandler(socket, ctx);
+  registerRoomReturnToLobbyHandler(socket, ctx);
   registerGameStartHandler(socket, ctx);
   registerGameGuessHandler(socket, ctx);
   registerGameReadyNextHandler(socket, ctx);

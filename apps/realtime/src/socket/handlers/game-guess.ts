@@ -76,5 +76,27 @@ export function registerGameGuessHandler(
         isFirstFill: result.isFirstFill,
       });
     }
+
+    // Broadcast público do guess pra feed compartilhado. `rate_limited` não
+    // entra: ruído. Demais outcomes vão pra todos (incluindo autor).
+    if (result.kind !== 'rate_limited') {
+      const player = room.players.get(socket.data.userId);
+      if (player) {
+        const slotKind =
+          result.kind === 'hit' || result.kind === 'too_late'
+            ? result.slot.kind
+            : undefined;
+        const isTie = result.kind === 'hit' ? result.isTie : undefined;
+        ctx.broadcaster.toRoom(code).emit('game:guess:public', {
+          userId: socket.data.userId,
+          nickname: player.nickname,
+          text: payload.text,
+          outcome: result.kind,
+          ...(slotKind !== undefined ? { slotKind } : {}),
+          ...(isTie !== undefined ? { isTie } : {}),
+          timestamp: Date.now(),
+        });
+      }
+    }
   });
 }
