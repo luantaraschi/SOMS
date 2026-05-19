@@ -1,26 +1,22 @@
-import { MAX_NICKNAME_LENGTH, MIN_NICKNAME_LENGTH } from '@soms/shared';
+/**
+ * Adapter do realtime sobre o validateNickname canônico do @soms/shared.
+ *
+ * RoomManager espera `NicknameValidationError | null` (null = ok).
+ * @soms/shared retorna discriminated union. Este wrapper converte.
+ *
+ * Quando precisar adicionar regras específicas do realtime (ex: blacklist de
+ * nicknames problemáticos), faça aqui — sem mexer no shared (consumido pelo
+ * apps/web também).
+ */
+import { validateNickname as sharedValidateNickname } from '@soms/shared';
 
-export type NicknameValidationError =
-  | { code: 'NICKNAME_INVALID'; reason: string };
+export type NicknameValidationError = {
+  code: 'NICKNAME_INVALID';
+  reason: string;
+};
 
 export function validateNickname(name: string): NicknameValidationError | null {
-  const trimmed = name.trim();
-  if (trimmed.length < MIN_NICKNAME_LENGTH) {
-    return { code: 'NICKNAME_INVALID', reason: `length < ${MIN_NICKNAME_LENGTH}` };
-  }
-  if (trimmed.length > MAX_NICKNAME_LENGTH) {
-    return { code: 'NICKNAME_INVALID', reason: `length > ${MAX_NICKNAME_LENGTH}` };
-  }
-  if (hasControlChar(trimmed)) {
-    return { code: 'NICKNAME_INVALID', reason: 'control characters not allowed' };
-  }
-  return null;
-}
-
-function hasControlChar(s: string): boolean {
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c <= 0x1f || c === 0x7f) return true;
-  }
-  return false;
+  const result = sharedValidateNickname(name);
+  if (result.ok) return null;
+  return { code: 'NICKNAME_INVALID', reason: result.reason };
 }
