@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LobbyView } from '@/components/lobby/LobbyView';
 import { EmptyState } from '@/components/screens/EmptyState';
@@ -9,6 +9,8 @@ import { SmBrand } from '@/components/primitives';
 import { useLobbyConnection } from '@/hooks/useLobbyConnection';
 import { useRoom } from '@/stores/room';
 
+const GAME_STATUSES = new Set(['countdown', 'playing', 'reveal', 'ended']);
+
 export default function LobbyPage({
   params,
 }: {
@@ -16,11 +18,21 @@ export default function LobbyPage({
 }): React.ReactElement {
   const { code: rawCode } = use(params);
   const code = rawCode.toUpperCase();
+  const router = useRouter();
 
   useLobbyConnection(code);
 
   const snapshot = useRoom((s) => s.snapshot);
   const connectionStatus = useRoom((s) => s.connectionStatus);
+
+  // Host iniciou partida (lobby→countdown) ou reconectamos mid-game →
+  // redireciona pra rota /jogar. O caminho reverso (jogar→lobby após
+  // room:return_to_lobby) é feito dentro de /jogar/page.tsx.
+  useEffect(() => {
+    if (snapshot && GAME_STATUSES.has(snapshot.status)) {
+      router.replace(`/sala/${code}/jogar`);
+    }
+  }, [snapshot, code, router]);
 
   if (connectionStatus === 'connecting' || !snapshot) {
     return <LobbyLoading code={code} />;
