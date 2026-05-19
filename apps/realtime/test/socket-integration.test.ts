@@ -325,12 +325,85 @@ describe('socket-integration — fluxo de sala', () => {
     expect(event.reason).toBe('kick');
   });
 
-  it('cliente já em sala tenta room:create → erro PLAYER_ALREADY_IN_ROOM', async () => {
+  it('cliente sozinho re-emite room:create (provável ack perdido) → sala antiga descartada, code novo retornado', async () => {
     const host = connect({ userId: HOST_USER_ID, nickname: 'host' });
     await waitForConnect(host);
-    await emitWithAck<RoomCreateAck>(host, 'room:create', { settings: defaultSettings });
+    const first = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!first.ok) throw new Error();
 
+    const second = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.code).not.toBe(first.code);
+  });
+
+  it('cliente em sala com outros players tenta room:create → PLAYER_ALREADY_IN_ROOM', async () => {
+    const host = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(host);
+    const created = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!created.ok) throw new Error();
+
+    const member = connect({ userId: MEMBER_USER_ID, nickname: 'memi' });
+    await waitForConnect(member);
+    await emitWithAck<RoomJoinAck>(member, 'room:join', { code: created.code });
+
+    // Host (com outro player na sala) tenta criar de novo
     const ack = await emitWithAck<RoomCreateAck>(host, 'room:create', {
+      settings: defaultSettings,
+    });
+    expect(ack.ok).toBe(false);
+    if (ack.ok) return;
+    expect(ack.error.code).toBe('PLAYER_ALREADY_IN_ROOM');
+  });
+
+  it('socket A cria + disconnect abrupto + novo socket mesmo userId cria → sala antiga desfeita, nova ok', async () => {
+    const a = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(a);
+    const first = await emitWithAck<RoomCreateAck>(a, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!first.ok) throw new Error();
+    const firstCode = first.code;
+
+    a.disconnect();
+    await new Promise((r) => setTimeout(r, 100));
+
+    const a2 = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(a2);
+    // tryAutoReconnect anexa a2 à sala antiga; o handler de room:create
+    // detecta caso 3 (lone host) e descarta a sala antiga pra criar uma nova.
+    await new Promise((r) => setTimeout(r, 100));
+    const second = await emitWithAck<RoomCreateAck>(a2, 'room:create', {
+      settings: defaultSettings,
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.code).not.toBe(firstCode);
+  });
+
+  it('nova aba mesmo userId (com outros players na sala original) tenta room:create → PLAYER_ALREADY_IN_ROOM', async () => {
+    const a = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(a);
+    const created = await emitWithAck<RoomCreateAck>(a, 'room:create', {
+      settings: defaultSettings,
+    });
+    if (!created.ok) throw new Error();
+
+    const b = connect({ userId: MEMBER_USER_ID, nickname: 'memi' });
+    await waitForConnect(b);
+    await emitWithAck<RoomJoinAck>(b, 'room:join', { code: created.code });
+
+    // 'a' continua conectado. 'a2' é uma nova aba do MESMO usuário.
+    const a2 = connect({ userId: HOST_USER_ID, nickname: 'host' });
+    await waitForConnect(a2);
+
+    const ack = await emitWithAck<RoomCreateAck>(a2, 'room:create', {
       settings: defaultSettings,
     });
     expect(ack.ok).toBe(false);

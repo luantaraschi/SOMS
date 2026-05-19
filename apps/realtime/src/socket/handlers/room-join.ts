@@ -1,22 +1,23 @@
-import { mapRoomErrorToServerError } from '../error-mapping.js';
 import { roomChannel } from '../broadcaster.js';
+import { mapRoomErrorToServerError } from '../error-mapping.js';
 import { buildRoomSnapshot } from '../snapshot.js';
 import type { TypedSocket } from '../types.js';
+import { ensureNotInAnotherRoom } from './_membership.js';
 import type { HandlerContext } from './types.js';
+
+const ALREADY_IN_ROOM_ERR = {
+  code: 'PLAYER_ALREADY_IN_ROOM' as const,
+  message: 'você já está em outra sala. saia primeiro.',
+};
 
 export function registerRoomJoinHandler(
   socket: TypedSocket,
   ctx: HandlerContext,
 ): void {
   socket.on('room:join', (payload, ack) => {
-    if (socket.data.currentRoomCode !== null) {
-      ack({
-        ok: false,
-        error: {
-          code: 'PLAYER_ALREADY_IN_ROOM',
-          message: 'você já está em outra sala. saia primeiro.',
-        },
-      });
+    const guard = ensureNotInAnotherRoom(socket, ctx.manager);
+    if (guard === 'blocked') {
+      ack({ ok: false, error: ALREADY_IN_ROOM_ERR });
       return;
     }
 

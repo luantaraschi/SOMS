@@ -11,8 +11,6 @@ import {
   roomCodeErrorMessage,
   validateNickname,
   validateRoomCode,
-  type RoomCreateAck,
-  type RoomJoinAck,
 } from '@soms/shared';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -28,10 +26,15 @@ import {
   SmInput,
   SmLabel,
 } from '@/components/primitives';
-import { getSocket } from '@/lib/socket';
+import { disconnectSocket, getSocket } from '@/lib/socket';
 import { useIdentity } from '@/stores/identity';
 
 type Submitting = 'create' | 'join' | null;
+
+/** Timeout do ack do server pra room:create / room:join. Sem isso, ack
+ * perdido (transport flake, server crash) deixa o client com submitting
+ * grudado e socket num estado server-side inconsistente. */
+const ACK_TIMEOUT_MS = 5_000;
 
 export default function HomePage(): React.ReactElement {
   return (
@@ -138,7 +141,9 @@ function HomeContent(): React.ReactElement {
       return;
     }
     const socket = getSocket(creds);
-    socket.emit(
+    // .timeout(ms) torna o ack tolerante a perda: callback recebe (err, ack)
+    // — se err != null, server não respondeu em ACK_TIMEOUT_MS.
+    socket.timeout(ACK_TIMEOUT_MS).emit(
       'room:create',
       {
         settings: {
@@ -151,10 +156,21 @@ function HomeContent(): React.ReactElement {
           },
         },
       },
-      (ack: RoomCreateAck) => {
+      (err, ack) => {
+        if (err || !ack) {
+          // Ack perdido: socket pode ter criado sala no server mas client perdeu.
+          // Recicla socket pra próxima tentativa entrar limpa do lado servidor.
+          disconnectSocket();
+          setNicknameError('a conexão demorou demais. tenta de novo.');
+          setSubmitting(null);
+          return;
+        }
         if (ack.ok) {
           router.push(`/sala/${ack.code}`);
         } else {
+          // Erro lógico do server: socket fica num estado conhecido (possivelmente
+          // com currentRoomCode setado de tentativa concorrente). Recicla pra ser seguro.
+          disconnectSocket();
           setNicknameError(ack.error.message);
           setSubmitting(null);
         }
@@ -178,14 +194,20 @@ function HomeContent(): React.ReactElement {
       return;
     }
     const socket = getSocket(creds);
-    socket.emit(
+    socket.timeout(ACK_TIMEOUT_MS).emit(
       'room:join',
       { code: codeResult.normalized },
-      (ack: RoomJoinAck) => {
+      (err, ack) => {
+        if (err || !ack) {
+          disconnectSocket();
+          setCodeError('a conexão demorou demais. tenta de novo.');
+          setSubmitting(null);
+          return;
+        }
         if (ack.ok) {
           router.push(`/sala/${codeResult.normalized}`);
         } else {
-          // Erros relacionados a nickname → mostra no campo nickname
+          disconnectSocket();
           if (
             ack.error.code === 'NICKNAME_TAKEN' ||
             ack.error.code === 'NICKNAME_INVALID'
