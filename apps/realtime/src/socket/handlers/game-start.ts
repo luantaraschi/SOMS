@@ -124,6 +124,7 @@ async function handleGameStart(
       return;
     }
 
+    ctx.roundRunner.startGame(code);
     ack({ ok: true });
   } catch (err) {
     ctx.logger.error({ err, code }, 'game:start: unexpected error');

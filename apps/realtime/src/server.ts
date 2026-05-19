@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { Server as SocketIOServer } from 'socket.io';
 import { config } from './config.js';
+import { persistFinishedGame } from './game/persister.js';
+import { RoundRunner, type RoundRunnerConfig } from './game/round-runner.js';
 import { GameSessionStore } from './game/session-store.js';
 import { logger } from './logger.js';
 import { registerCors } from './plugins/cors.js';
@@ -24,9 +26,17 @@ export type BuiltServer = {
   manager: RoomManager;
   broadcaster: Broadcaster;
   gameSessionStore: GameSessionStore;
+  roundRunner: RoundRunner;
 };
 
-export async function buildServer(): Promise<BuiltServer> {
+export type BuildServerOpts = {
+  /** Permite testes injetarem durações curtas em vez dos defaults de produção. */
+  runnerConfig?: Partial<RoundRunnerConfig>;
+  /** Permite testes desabilitar a persistência (sem prisma em integration tests). */
+  disablePersist?: boolean;
+};
+
+export async function buildServer(opts: BuildServerOpts = {}): Promise<BuiltServer> {
   const fastify = Fastify({
     loggerInstance: logger as unknown as FastifyBaseLogger,
   });
@@ -55,6 +65,22 @@ export async function buildServer(): Promise<BuiltServer> {
   });
   const gameSessionStore = new GameSessionStore({ logger });
 
+  const roundRunner = new RoundRunner(
+    gameSessionStore,
+    manager,
+    broadcaster,
+    logger,
+    async (code) => {
+      if (opts.disablePersist) return;
+      const session = gameSessionStore.getSession(code);
+      const room = manager.getRoom(code);
+      if (!session || !room) return;
+      await persistFinishedGame({ code, session, room, logger });
+      // session fica em memória até a sala morrer naturalmente (ended → abandoned → destroyed)
+    },
+    opts.runnerConfig ?? {},
+  );
+
   io.on('connection', (socket) => {
     const auth = validateAuth(socket);
     if (!auth.ok) {
@@ -78,9 +104,7 @@ export async function buildServer(): Promise<BuiltServer> {
       'socket authenticated',
     );
 
-    // Tentar reconexão: o user tem alguma sala onde está marcado como
-    // desconectado dentro do grace?
-    void tryAutoReconnect(socket, manager).then((reconnected) => {
+    void tryAutoReconnect(socket, manager, gameSessionStore).then((reconnected) => {
       if (reconnected) {
         logger.info(
           { userId: auth.auth.userId, code: reconnected },
@@ -93,6 +117,7 @@ export async function buildServer(): Promise<BuiltServer> {
       manager,
       broadcaster,
       gameSessionStore,
+      roundRunner,
       logger,
     });
 
@@ -108,18 +133,13 @@ export async function buildServer(): Promise<BuiltServer> {
     });
   });
 
-  return { fastify, io, manager, broadcaster, gameSessionStore };
+  return { fastify, io, manager, broadcaster, gameSessionStore, roundRunner };
 }
 
-/**
- * Procura uma sala onde `userId` está marcado como desconectado dentro do
- * grace period. Se encontrar, reconecta, faz socket.join e envia snapshot.
- *
- * Retorna o código da sala reconectada (ou null se nada pra reconectar).
- */
 async function tryAutoReconnect(
   socket: TypedSocket,
   manager: RoomManager,
+  gameSessionStore: GameSessionStore,
 ): Promise<string | null> {
   for (const room of manager.getAllRooms()) {
     const player = room.players.get(socket.data.userId);
@@ -130,7 +150,8 @@ async function tryAutoReconnect(
 
     socket.data.currentRoomCode = room.code;
     await socket.join(roomChannel(room.code));
-    socket.emit('room:snapshot', buildRoomSnapshot(room, socket.data.userId));
+    const session = gameSessionStore.getSession(room.code);
+    socket.emit('room:snapshot', buildRoomSnapshot(room, socket.data.userId, session));
     return room.code;
   }
   return null;

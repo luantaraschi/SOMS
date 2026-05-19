@@ -26,7 +26,7 @@ export function registerGameReadyNextHandler(
     if (room.hostUserId !== socket.data.userId) {
       ack({
         ok: false,
-        error: { code: 'NOT_HOST', message: 'só o host pode fazer isso.' },
+        error: { code: 'NOT_HOST', message: 'só o host pode avançar.' },
       });
       return;
     }
@@ -35,14 +35,24 @@ export function registerGameReadyNextHandler(
         ok: false,
         error: {
           code: 'INVALID_STATUS_TRANSITION',
-          message: 'só dá pra ir pro próximo round durante o reveal.',
+          message: 'só dá pra avançar durante o reveal.',
+          details: { status: room.status },
         },
       });
       return;
     }
 
-    // Stub B3: aceita e loga. Game loop real (B4) consome esse sinal.
-    ctx.logger.info({ code, userId: socket.data.userId }, 'ready_next_round (stub)');
+    const result = ctx.roundRunner.advanceToNextRound(code);
+    if (!result.ok) {
+      ack({
+        ok: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: result.reason ?? 'erro interno',
+        },
+      });
+      return;
+    }
     ack({ ok: true });
   });
 }

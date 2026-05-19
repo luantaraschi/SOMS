@@ -6,7 +6,7 @@ const SHUTDOWN_TIMEOUT_MS = 5_000;
 const TICK_INTERVAL_MS = 1_000;
 
 async function main(): Promise<void> {
-  const { fastify, io, manager } = await buildServer();
+  const { fastify, io, manager, roundRunner } = await buildServer();
 
   await fastify.listen({ port: config.port, host: '0.0.0.0' });
   logger.info(
@@ -25,6 +25,7 @@ async function main(): Promise<void> {
     shuttingDown = true;
     logger.info({ signal }, 'shutdown signal received');
     clearInterval(tickInterval);
+    roundRunner.cleanupAll();
 
     const force = setTimeout(() => {
       logger.error('shutdown timeout exceeded — forcing exit');
