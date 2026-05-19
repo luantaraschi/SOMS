@@ -100,6 +100,41 @@ export type RoomSnapshot = {
   players: PlayerSnapshot[];
   settings: RoomSettings;
   yourUserId: string;
+  /** Estado de jogo em andamento (presente quando status != lobby/ended/abandoned). */
+  gameState?: GameStateSnapshot;
+};
+
+export type PlayerScoreSnapshot = {
+  userId: string;
+  totalPoints: number;
+  /** Pontos por round (mesma ordem dos rounds completados). */
+  roundPoints: number[];
+};
+
+export type CurrentRoundSnapshot = {
+  index: number;
+  totalRounds: number;
+  startedAt: number;
+  durationMs: number;
+  previewUrl: string;
+  slots: { kind: SlotKind; basePoints: number }[];
+  /** Slots já preenchidos quando o cliente reconectou. */
+  fills: SlotFillPublic[];
+  decade: number;
+};
+
+export type LastRevealSnapshot = {
+  roundIndex: number;
+  track: TrackReveal;
+  fills: SlotFillPublic[];
+};
+
+export type GameStateSnapshot = {
+  currentRoundIndex: number;
+  totalRounds: number;
+  scores: PlayerScoreSnapshot[];
+  currentRound?: CurrentRoundSnapshot;
+  lastReveal?: LastRevealSnapshot;
 };
 
 // ============================================================
@@ -221,33 +256,51 @@ export type GameReadyNextRoundAck = { ok: boolean; error?: ServerError };
 
 export type GamePreparingEvent = { totalRounds: number };
 
-export type GameCountdownEvent = { secondsLeft: number };
+export type GameCountdownEvent = {
+  secondsLeft: number;
+  /** Timestamp absoluto (ms) em que o round vai começar. Cliente calcula remaining. */
+  startsAt: number;
+};
 
 export type GameRoundStartedEvent = {
   roundIndex: number;
   totalRounds: number;
-  durationSeconds: number;
+  /** Timestamp absoluto (ms) do início. Cliente calcula remaining = startedAt + durationMs - Date.now(). */
+  startedAt: number;
+  durationMs: number;
   previewUrl: string;
+  /** Slots disponíveis (sem revelar `value`/`display`). */
+  slots: { kind: SlotKind; basePoints: number }[];
+  decade: number;
 };
 
 export type GameGuessAcceptedEvent = { outcome: GuessOutcome };
 
 export type GameSlotFilledEvent = {
   slotKind: SlotKind;
-  slotDisplay: string;
-  winners: SlotWinnerPublic[];
+  /** Não revela `display` enquanto o round está em curso — só na reveal. */
+  winners: { userId: string; points: number }[];
   isFirstFill: boolean;
 };
 
 export type GameRoundRevealEvent = {
+  roundIndex: number;
   track: TrackReveal;
-  slotFills: SlotFillPublic[];
-  scores: ScoreDelta[];
+  fills: SlotFillPublic[];
+  scoresSnapshot: { userId: string; totalPoints: number }[];
+  endedReason: 'timeout' | 'early';
+};
+
+export type GameRankingEntry = {
+  userId: string;
+  totalPoints: number;
+  position: number;
 };
 
 export type GameEndedEvent = {
-  podium: PodiumEntry[];
-  ranking: ScoreSnapshot[];
+  ranking: GameRankingEntry[];
+  totalRounds: number;
+  durationMs: number;
 };
 
 // ============================================================

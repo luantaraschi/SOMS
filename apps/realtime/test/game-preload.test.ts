@@ -280,7 +280,8 @@ describe('GameSessionStore', () => {
       settings: baseSettings,
     });
     expect(session.code).toBe('ABCDEF');
-    expect(session.currentRoundIndex).toBe(0);
+    expect(session.completedRounds).toEqual([]);
+    expect(session.currentRound).toBeUndefined();
     expect(store.getSession('ABCDEF')).toBe(session);
   });
 
