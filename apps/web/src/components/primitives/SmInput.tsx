@@ -25,10 +25,24 @@ export function SmInput({
   return <input className={cls} type={type} {...rest} />;
 }
 
+/**
+ * SmLabel — span estilizado com a classe .sm-label do design-system.
+ * Aceita `htmlFor` pra associar com <input id="...">. Renderiza como <label>
+ * quando htmlFor está presente (a11y), <span> caso contrário (puro visual).
+ */
 export function SmLabel({
+  htmlFor,
   children,
 }: {
+  htmlFor?: string;
   children: React.ReactNode;
 }): React.ReactElement {
+  if (htmlFor !== undefined) {
+    return (
+      <label className="sm-label" htmlFor={htmlFor}>
+        {children}
+      </label>
+    );
+  }
   return <span className="sm-label">{children}</span>;
 }
