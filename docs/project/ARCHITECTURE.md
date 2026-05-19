@@ -365,7 +365,6 @@ O servidor de WS valida o JWT do cookie no `connect`. Mesma secret JWT que o Aut
 - **Rotação por slot:** quando `settings.trackSource.genres` tem múltiplos valores, `selectTracksForGame` sorteia 1 gênero por slot de track. Evita que "todos os gêneros" colapse em só pop.
 - **Filtro de década (estratégia C):** ao mapear a track no provider, derivar `decade = floor(year / 10) * 10` do `release_date`. Filtrar `decade ∈ settings.trackSource.decades` antes do upsert.
 - **Rate limit:** API pública Deezer ≈ 50 req / 5s por IP. Provider implementa token bucket simples (max 8 req/s, fila FIFO) para nunca disparar 429.
-- **Modo offline (`SOMS_OFFLINE=true`, ver §10):** pula chamada Deezer e usa só cache. Se cache `< totalRounds`, erro `INSUFFICIENT_TRACKS` com mensagem específica.
 
 ### 5.3 Link de playlist — **Sprint 2**
 
@@ -393,7 +392,7 @@ Cachear `previewUrl` no Postgres por mais que o TTL = URL morre antes do uso. Va
 
 - Server emite `game:preparing` → cliente mostra "Preparando partida..." (UX explica a espera).
 - Quando queue pronta: emit `game:countdown` (3, 2, 1) normalmente.
-- Se Deezer indisponível e TODAS tracks falham: erro `DEEZER_UNAVAILABLE_FOR_START`, fallback `SOMS_OFFLINE`-style (URLs cacheadas — quebradas, mas indica que a sala não está funcional pra dev).
+- Se Deezer indisponível e TODAS tracks falham: erro `DEEZER_UNAVAILABLE_FOR_START`. Sala volta para `LOBBY` com mensagem clara — não há fallback automático para cache (URLs cacheadas vencem rápido; ver TECH_DEBT.md).
 
 **`Track.previewUrl` no banco** continua existindo:
 
@@ -643,7 +642,6 @@ PORT=8080
 WEB_ORIGIN=https://soms.app          # CORS
 DEEZER_API_BASE=https://api.deezer.com
 MUSICBRAINZ_USER_AGENT=SOMS/0.1 (contato@soms.app)
-SOMS_OFFLINE=false                    # Sprint 1: quando true, selectTracksForGame() pula Deezer e usa só cache local
 ```
 
 ---

@@ -46,3 +46,12 @@ Lista curta de débitos técnicos conhecidos. Cada item tem: gatilho, ação, pr
 - **Sintoma:** `Promise.all` preserva ordem do array, dedup só por `track.id`, loop quebra ao atingir `TRACKS_PER_GENRE`. Resultado: hip-hop pegou 2x Racionais, indie pegou 2x Arctic Monkeys, etc. — sempre o 1º artista da lista.
 - **Decisão:** funcional para MVP, tracks são canônicas dos artistas-âncora. Aceito.
 - **Ação futura:** quando o pool crescer ou virar provider real em E1 (Sprint 2), considerar **round-robin entre buckets** (pegar 1 de cada artista alternadamente) em vez de concat ordenado. Aumenta variedade sem custo extra de request.
+
+---
+
+## SOMS_OFFLINE descontinuado em pre-B
+
+- **Status:** removido em [commit pre-B] de `.env`, `.env.example`, `ARCHITECTURE.md` §10/§5.4, `SPRINT_1.md` B5.
+- **Por que:** premissa de cache permanente de `previewUrl` era inválida — tokens Akamai HDN têm TTL ~30min (60% mortas em <1h em dev). "Modo offline com cache" não é coerente porque o cache nunca é authoritative.
+- **Substituído por:** `DEEZER_UNAVAILABLE_FOR_START` quando Deezer cai no `room:start` → sala volta pra LOBBY com erro explícito.
+- **Quando precisar de modo offline (CI/E2E sem internet):** implementar via **fixture** — snapshot de respostas Deezer válidas + resolver mockado no Vitest (vi.mock do `@soms/deezer`). Provavelmente Sprint 3+ junto com testes E2E reais do `apps/realtime`.

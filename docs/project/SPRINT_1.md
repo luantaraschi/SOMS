@@ -93,14 +93,11 @@ Cada entrada tem `{ label, deezerQuery }`. Os `deezerQuery` são chutes iniciais
   4. Sorteia 1 track elegível ainda não usada na partida.
 - Sem rotação, "todos os gêneros" pode degenerar em só pop. Bug explícito a evitar.
 
-#### 3.4 Flag `SOMS_OFFLINE`
+#### 3.4 ~~Flag `SOMS_OFFLINE`~~ — **descontinuada em pre-B**
 
-- Adicionada em [`.env.example`](../../.env.example) com `SOMS_OFFLINE=false`.
-- `apps/realtime` lê no boot, expõe via `config.offline: boolean`.
-- Quando `true`:
-  - `selectTracksForGame` pula chamada Deezer e usa só cache do Postgres.
-  - Se cache `< count`, retorna `INSUFFICIENT_TRACKS` com mensagem específica de modo offline (ver 3.5).
-- Útil para dev sem internet e CI futuro.
+A premissa era cachear `Track.previewUrl` no banco e usar em runtime quando Deezer estivesse offline. Validação empírica em 2026-05-18 (`pnpm db:verify-cache`): 60% das URLs morrem em <1h por Akamai HDN TTL ~30min. Cache de URLs **não é authoritative** em momento algum, então não há "modo offline" coerente.
+
+**Substituído por:** erro `DEEZER_UNAVAILABLE_FOR_START` quando o pre-load em `room:start` falha. Sala volta para LOBBY. Para CI/E2E offline futuro (Sprint 3+), implementar fixture: snapshot de respostas Deezer mockadas + resolver injetado nos testes. Ver [`TECH_DEBT.md`](./TECH_DEBT.md).
 
 #### 3.5 Mensagens de `INSUFFICIENT_TRACKS`
 
@@ -108,10 +105,11 @@ Em [`packages/shared/src/messages.ts`](../../packages/shared/src/messages.ts):
 
 | Função | Quando | Saída |
 |---|---|---|
-| `insufficientTracksMessage(count)` | Sprint 1 / Bloco E3 (Deezer up ou down, mas resultado insuficiente) | varia por `count`: 0 / 1 / N |
-| `insufficientTracksOfflineMessage(count)` | `SOMS_OFFLINE=true` ativo e cache `< totalRounds` | `"modo offline ativo — só X tracks no cache local."` |
+| `insufficientTracksMessage(count)` | Sprint 1 / Bloco E3 (Deezer retornou < `totalRounds` tracks válidos) | varia por `count`: 0 / 1 / N |
 
 Frases sem emoji, lowercase, secas. Sem ponto de exclamação.
+
+> ⚠️ `insufficientTracksOfflineMessage` foi removida junto com `SOMS_OFFLINE` (ver 3.4).
 
 #### 3.6 `Track.deezerGenres` (campo novo no schema)
 
@@ -261,8 +259,7 @@ Quando este sprint estiver fechado, a Fase 2 do PRD começa.
   - Extrai `.preview` (URL fresca) e monta entradas `{ trackId, freshPreviewUrl, title, artists, decade }`.
   - Se algum track retorna sem preview (404 ou `preview === ""`): descarta, busca substituta no banco (re-invoca E2 com `count=1`, exclui IDs já na queue).
 - [ ] Antes do countdown: server emit `game:preparing` para o socket. UX no client: "Preparando partida...".
-- [ ] Fallback offline (`SOMS_OFFLINE=true`): pula refetch, usa `Track.previewUrl` cacheado mesmo morto, log warn. Para dev/CI.
-- [ ] Se Deezer up e **todas** as N tracks falham: emit `error: { code: 'DEEZER_UNAVAILABLE_FOR_START' }`. Sala volta para `LOBBY`.
+- [ ] Se Deezer indisponível e **todas** as N tracks falham: emit `error: { code: 'DEEZER_UNAVAILABLE_FOR_START' }`. Sala volta para `LOBBY`. **Não há fallback automático para cache** — URLs cacheadas vencem em ~30min, e Sprint 1 não tem fixture system pra E2E offline (ver TECH_DEBT.md).
 
 **Aceite:** teste de integração com fetch mockado — (a) 3 tracks no banco, 2 retornam preview válido + 1 vem sem preview → queue final tem 3 tracks (1 substituída via E2); (b) 0 retornam válidos → erro `DEEZER_UNAVAILABLE_FOR_START`.
 

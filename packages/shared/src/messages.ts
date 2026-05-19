@@ -22,10 +22,3 @@ export function insufficientTracksMessage(count: number): string {
   return `só achei ${count} músicas pra essa combinação. afrouxa um pouco — adiciona um gênero ou década.`;
 }
 
-/**
- * Variante de `INSUFFICIENT_TRACKS` quando `SOMS_OFFLINE=true` está ativo.
- * Sinaliza ao host que o problema é o modo offline e não as settings.
- */
-export function insufficientTracksOfflineMessage(count: number): string {
-  return `modo offline ativo — só ${count} ${count === 1 ? 'track' : 'tracks'} no cache local.`;
-}
