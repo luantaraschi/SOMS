@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Suspense,
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
 } from 'react';
@@ -59,10 +60,17 @@ function HomeContent(): React.ReactElement {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<Submitting>(null);
 
-  // Sync com store após hidratação do persist middleware (1ª pintura é null).
+  // Hidrata o input com o nickname salvo UMA VEZ, quando o persist do Zustand
+  // termina de carregar. Após isso o campo é puramente controlado pelo
+  // usuário — apagar tudo é válido e não dispara reset. (Bug D1.)
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (savedNickname && nickname === '') setNickname(savedNickname);
-  }, [savedNickname, nickname]);
+    if (hydratedRef.current) return;
+    if (savedNickname) {
+      setNickname(savedNickname);
+      hydratedRef.current = true;
+    }
+  }, [savedNickname]);
 
   // Suporta deep-link /?code=ABCD sem auto-submit (C3).
   useEffect(() => {

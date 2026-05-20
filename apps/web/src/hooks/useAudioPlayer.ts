@@ -40,7 +40,11 @@ export function useAudioPlayer(): UseAudioPlayer {
     if (typeof window === 'undefined') return;
     const audio = new Audio();
     audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
+    // Sem crossOrigin: previews do Deezer CDN não retornam
+    // Access-Control-Allow-Origin. Setar 'anonymous' aqui exige esse header
+    // e o browser aborta o stream ("fetching aborted"). Só precisaríamos de
+    // CORS pra analisar o buffer via Web Audio API — não é o caso (waveform
+    // é decorativa). (Bug D2.)
     audioRef.current = audio;
 
     const onLoadStart = (): void => setState('loading');

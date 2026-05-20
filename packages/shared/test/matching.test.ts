@@ -22,7 +22,26 @@ describe('normalize', () => {
     expect(normalize('   \t   ')).toBe('');
   });
 
-  it('preserves internal punctuation (Sprint 1 não filtra pontuação)', () => {
-    expect(normalize("It's a test, isn't it?")).toBe("it's a test, isn't it?");
+  it('strips punctuation — ?, !, ., , (D3 fix)', () => {
+    expect(normalize('Do I Wanna Know?')).toBe('do i wanna know');
+    expect(normalize('Hey!')).toBe('hey');
+    expect(normalize('Mr. Brightside')).toBe('mr brightside');
+    expect(normalize('hello, world')).toBe('hello world');
+  });
+
+  it("strips apostrophes — Ain't, isn't, etc", () => {
+    expect(normalize("Ain't No Sunshine")).toBe('aint no sunshine');
+    expect(normalize("It's a test")).toBe('its a test');
+  });
+
+  it('match: title com pontuação vs guess sem pontuação', () => {
+    expect(normalize('Do I Wanna Know?')).toBe(normalize('do i wanna know'));
+    expect(normalize("Ain't No Sunshine")).toBe(normalize('aint no sunshine'));
+    expect(normalize('É o Amor')).toBe(normalize('e o amor'));
+  });
+
+  it('preserves digits', () => {
+    expect(normalize('99 Luftballons')).toBe('99 luftballons');
+    expect(normalize('1979')).toBe('1979');
   });
 });
