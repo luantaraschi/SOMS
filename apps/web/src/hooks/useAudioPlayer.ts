@@ -59,7 +59,7 @@ export function useAudioPlayer(): UseAudioPlayer {
     const onEnded = (): void => setState('ended');
     const onError = (): void => {
       setState('error');
-      setError('não consegui carregar o áudio.');
+      setError('não consegui carregar o áudio dessa música. aguarda o próximo round.');
     };
 
     audio.addEventListener('loadstart', onLoadStart);
@@ -99,12 +99,12 @@ export function useAudioPlayer(): UseAudioPlayer {
       const isNotAllowed =
         err instanceof DOMException && err.name === 'NotAllowedError';
       setState(isNotAllowed ? 'blocked' : 'error');
+      // err.message vem em inglês nativo do browser. Mostramos texto pt-BR
+      // próprio. D-P6.
       setError(
         isNotAllowed
           ? 'clica pra tocar — o navegador pediu permissão.'
-          : err instanceof Error
-            ? err.message
-            : 'erro ao reproduzir.',
+          : 'não consegui carregar o áudio dessa música. aguarda o próximo round.',
       );
     });
   }, []);

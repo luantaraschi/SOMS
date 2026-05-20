@@ -88,17 +88,19 @@ export function RevealScreen(): React.ReactElement {
       </div>
 
       <div
+        className="reveal-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: '280px 1fr',
-          gap: 32,
+          gap: 24,
           alignItems: 'start',
         }}
       >
         <div
+          className="reveal-cover"
           style={{
-            width: 280,
-            height: 280,
+            width: '100%',
+            maxWidth: 280,
+            aspectRatio: '1 / 1',
             background: 'var(--secondary)',
             border: '4px solid var(--ink)',
             borderRadius: 24,

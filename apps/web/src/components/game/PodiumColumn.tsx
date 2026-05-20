@@ -35,6 +35,7 @@ export function PodiumColumn({
         textColor={textColor}
       />
       <div
+        className={`sm-podium-${rank}`}
         style={{
           background: color,
           color: textColor,

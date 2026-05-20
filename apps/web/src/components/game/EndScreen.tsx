@@ -139,9 +139,9 @@ export function EndScreen(): React.ReactElement {
             resto do ranking
           </div>
           <div
+            className="sm-rest-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
               gap: 12,
             }}
           >

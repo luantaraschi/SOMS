@@ -55,4 +55,47 @@
   );
   background-size: 22px 22px;
   min-height: 100vh;
+  overflow-x: hidden; /* Garantia contra overflow horizontal — D-P5 mobile. */
+}
+
+/* D-P5 — Ajustes mobile mínimos.
+ *
+ * RevealScreen usa grid 2-col (cover + texto) em desktop. Em ≤640px vira
+ * 1 coluna com cover centralizada.
+ */
+.reveal-grid {
+  grid-template-columns: 280px 1fr;
+}
+.reveal-cover {
+  justify-self: start;
+}
+@media (max-width: 640px) {
+  .reveal-grid {
+    grid-template-columns: 1fr;
+  }
+  .reveal-cover {
+    justify-self: center;
+  }
+}
+
+/* PodiumColumn tem widths fixos (200/160px). Em ≤640px o container já
+ * flex-wrap, mas as colunas ficam ainda grandes — encolhe um pouco. */
+@media (max-width: 640px) {
+  .sm-podium-1 {
+    width: 160px !important;
+  }
+  .sm-podium-2,
+  .sm-podium-3 {
+    width: 132px !important;
+  }
+}
+
+/* EndScreen "resto do ranking" grid 2-col em desktop, 1-col em mobile. */
+.sm-rest-grid {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .sm-rest-grid {
+    grid-template-columns: 1fr;
+  }
 }
