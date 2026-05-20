@@ -6,6 +6,7 @@ import { CountdownScreen } from '@/components/game/CountdownScreen';
 import { EndScreen } from '@/components/game/EndScreen';
 import { PlayingScreen } from '@/components/game/PlayingScreen';
 import { RevealScreen } from '@/components/game/RevealScreen';
+import { ConnectionToast } from '@/components/ConnectionToast';
 import { ToastStack } from '@/components/ToastStack';
 import { SmBrand } from '@/components/primitives';
 import { useGameConnection } from '@/hooks/useGameConnection';
@@ -41,12 +42,13 @@ export default function PlayPage({
     }
   }, [snapshot?.status, code, router]);
 
-  // Wrapper que mantém o ToastStack visível em todas as fases.
+  // Wrapper que mantém ToastStack + ConnectionToast visíveis em todas as fases.
   const content = renderContent({ snapshot, phase });
   return (
     <>
       {content}
       <ToastStack />
+      <ConnectionToast />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { ConnectionToast } from '@/components/ConnectionToast';
 import { LobbyView } from '@/components/lobby/LobbyView';
 import { EmptyState } from '@/components/screens/EmptyState';
 import { ErrorScreen } from '@/components/screens/ErrorScreen';
@@ -34,19 +35,28 @@ export default function LobbyPage({
     }
   }, [snapshot, code, router]);
 
+  let body: React.ReactElement;
   if (connectionStatus === 'connecting' || !snapshot) {
-    return <LobbyLoading code={code} />;
-  }
-
-  if (connectionStatus === 'error' || connectionStatus === 'disconnected') {
-    return <LobbyError />;
+    body = <LobbyLoading code={code} />;
+  } else if (
+    connectionStatus === 'error' ||
+    connectionStatus === 'disconnected'
+  ) {
+    body = <LobbyError />;
+  } else {
+    body = (
+      <LobbyView
+        snapshot={snapshot}
+        emptyState={snapshot.players.length === 1 ? <EmptyState /> : null}
+      />
+    );
   }
 
   return (
-    <LobbyView
-      snapshot={snapshot}
-      emptyState={snapshot.players.length === 1 ? <EmptyState /> : null}
-    />
+    <>
+      {body}
+      <ConnectionToast />
+    </>
   );
 }
 
