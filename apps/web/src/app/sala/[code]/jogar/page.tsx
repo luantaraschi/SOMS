@@ -6,6 +6,7 @@ import { CountdownScreen } from '@/components/game/CountdownScreen';
 import { EndScreen } from '@/components/game/EndScreen';
 import { PlayingScreen } from '@/components/game/PlayingScreen';
 import { RevealScreen } from '@/components/game/RevealScreen';
+import { ToastStack } from '@/components/ToastStack';
 import { SmBrand } from '@/components/primitives';
 import { useGameConnection } from '@/hooks/useGameConnection';
 import { useLobbyConnection } from '@/hooks/useLobbyConnection';
@@ -40,6 +41,23 @@ export default function PlayPage({
     }
   }, [snapshot?.status, code, router]);
 
+  // Wrapper que mantém o ToastStack visível em todas as fases.
+  const content = renderContent({ snapshot, phase });
+  return (
+    <>
+      {content}
+      <ToastStack />
+    </>
+  );
+}
+
+function renderContent({
+  snapshot,
+  phase,
+}: {
+  snapshot: ReturnType<typeof useRoom.getState>['snapshot'];
+  phase: ReturnType<typeof useGame.getState>['phase'];
+}): React.ReactElement {
   if (!snapshot) {
     return (
       <main className="paper min-h-screen flex items-center justify-center p-8">
@@ -52,8 +70,6 @@ export default function PlayPage({
   }
 
   // Fase do server preferida pra status iniciais, fase local pro estado vivo.
-  // Server status='countdown' mas phase='idle' (ainda não chegou game:countdown):
-  // mostra CountdownScreen via fallback de status.
   if (phase === 'ended') return <EndScreen />;
   if (phase === 'reveal') return <RevealScreen />;
   if (phase === 'playing') return <PlayingScreen />;

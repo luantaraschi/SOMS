@@ -16,6 +16,7 @@ import { getSocket } from '@/lib/socket';
 import { useGame } from '@/stores/game';
 import { useIdentity } from '@/stores/identity';
 import { useRoom } from '@/stores/room';
+import { useToast } from '@/stores/toast';
 
 /**
  * Registra listeners de eventos de jogo (game:*). Complementar ao
@@ -58,9 +59,26 @@ export function useGameConnection(code: string): void {
       useGame.getState().addFeedEntry(payload);
     }
 
-    function onGuessAccepted(_payload: GameGuessAcceptedEvent): void {
-      // Privado pro autor. Por agora não usamos — feed público cobre UX
-      // base. Toast de "+pts" é polimento (bloco D).
+    function onGuessAccepted(payload: GameGuessAcceptedEvent): void {
+      const { outcome } = payload;
+      const toast = useToast.getState();
+      switch (outcome.kind) {
+        case 'hit': {
+          const tieSuffix = outcome.isTie ? ' (empate)' : '';
+          toast.show({
+            text: `acertou +${outcome.points} pts${tieSuffix}`,
+            variant: 'success',
+          });
+          break;
+        }
+        case 'too_late':
+          toast.show({ text: 'tarde demais', variant: 'warm', ttlMs: 1_500 });
+          break;
+        case 'rate_limited':
+          toast.show({ text: 'calma — espera um pouco', variant: 'info', ttlMs: 1_200 });
+          break;
+        // 'miss' não dispara toast — já aparece no feed.
+      }
     }
 
     function onRoundReveal(payload: GameRoundRevealEvent): void {
