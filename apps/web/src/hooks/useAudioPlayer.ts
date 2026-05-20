@@ -58,8 +58,34 @@ export function useAudioPlayer(): UseAudioPlayer {
       setState((s) => (s === 'ended' || s === 'error' ? s : 'paused'));
     const onEnded = (): void => setState('ended');
     const onError = (): void => {
+      const mediaError = audio.error;
+      const code = mediaError?.code;
+      // MediaError.code:
+      //   1 = MEDIA_ERR_ABORTED (browser cancelou — normal em troca de src
+      //       entre rounds, em Strict Mode dev, ou se o usuário pausou)
+      //   2 = MEDIA_ERR_NETWORK (perdeu rede ou CDN deu 5xx)
+      //   3 = MEDIA_ERR_DECODE (áudio corrompido)
+      //   4 = MEDIA_ERR_SRC_NOT_SUPPORTED (URL inválida ou formato não suportado)
+      //
+      // Bug "algumas músicas não tocavam": antes setávamos 'error' em
+      // QUALQUER código, incluindo ABORTED. Agora ignoramos ABORTED.
+      if (code === 1) {
+        return;
+      }
+      // Log estruturado pro diagnóstico de URLs específicas que falham.
+      console.warn('[audio] error', {
+        code,
+        message: mediaError?.message,
+        src: audio.src,
+      });
       setState('error');
-      setError('não consegui carregar o áudio dessa música. aguarda o próximo round.');
+      if (code === 2) {
+        setError('rede falhou pra carregar essa música.');
+      } else if (code === 4) {
+        setError('essa música não está disponível agora. aguarda o próximo round.');
+      } else {
+        setError('não consegui carregar o áudio dessa música.');
+      }
     };
 
     audio.addEventListener('loadstart', onLoadStart);

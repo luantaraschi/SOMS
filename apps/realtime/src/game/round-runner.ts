@@ -120,6 +120,17 @@ export class RoundRunner {
 
     this.manager.systemTransition(code, 'playing');
 
+    this.logger.info(
+      {
+        code,
+        roundIndex,
+        trackId: round.queueItem.trackId,
+        title: round.queueItem.title,
+        previewUrl: round.queueItem.freshPreviewUrl,
+      },
+      'shipping round to clients',
+    );
+
     this.broadcaster.toRoom(code).emit('game:round:started', {
       roundIndex,
       totalRounds: session.queue.length,
