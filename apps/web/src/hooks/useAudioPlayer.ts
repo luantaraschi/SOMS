@@ -89,6 +89,13 @@ export function useAudioPlayer(): UseAudioPlayer {
     audio.src = url;
     audio.currentTime = 0;
     audio.play().catch((err: unknown) => {
+      // AbortError vem quando play() é interrompido por pause() ou nova
+      // chamada a load()/src=. Acontece naturalmente em React strict mode
+      // dev (double-mount), em transição de round (novo src cancela o
+      // anterior) e durante navegação. Não é erro real — só ruído. Bug D4.
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
       const isNotAllowed =
         err instanceof DOMException && err.name === 'NotAllowedError';
       setState(isNotAllowed ? 'blocked' : 'error');

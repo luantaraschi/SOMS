@@ -2,9 +2,18 @@
    SOMS — Colors & Type
    Neobrutalism com pulso musical/festivo.
    Light-first. Mobile-first. Tudo é tangível.
-   ============================================================= */
+   =============================================================
 
-@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap");
+   Fontes (Unbounded / Inter / JetBrains Mono):
+   - Em apps/web (Next.js): carregadas via `next/font/google` em layout.tsx
+     (CSS vars --font-display/--font-body/--font-mono já vêm setadas).
+   - Em standalone HTML (preview/, ui_kits/web_app/): cada HTML precisa ter
+     <link rel="stylesheet" href="https://fonts.googleapis.com/..."> no <head>.
+
+   Bug D5: o `@import url(googleapis...)` que ficava aqui era inlinado pelo
+   bundler do Next dentro do CSS final, mas APÓS outras regras —
+   violava a regra "@import must come first" e o browser ignorava as fontes.
+*/
 
 :root {
   /* ----------------------------------------------------------
