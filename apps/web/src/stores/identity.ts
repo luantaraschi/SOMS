@@ -38,6 +38,11 @@ export const useIdentity = create<IdentityState>()(
         userId: state.userId,
         nickname: state.nickname,
       }),
+      // SSR-safe: pula hidratação automática e deixa o cliente disparar
+      // explicitamente via `useIdentity.persist.rehydrate()` em layout.tsx.
+      // Evita flash de "nickname vazio" no 1º frame quando a Home renderiza
+      // antes do localStorage carregar.
+      skipHydration: true,
     },
   ),
 );

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Unbounded } from 'next/font/google';
+import { PersistGate } from '@/components/PersistGate';
 import './globals.css';
 
 // Configuração em sync com tokens.css — DESIGN.md §3 e §8.
@@ -36,7 +37,9 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${inter.variable} ${unbounded.variable} ${mono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <PersistGate>{children}</PersistGate>
+      </body>
     </html>
   );
 }
