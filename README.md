@@ -1,44 +1,39 @@
 # SOMS
 
-> Web party game musical. Joga em sala, ouve clipes curtos, chuta título/artista/feat antes dos amigos, termina com stats engraçadas, badges e cards compartilháveis.
+Party game musical em tempo real onde os jogadores competem para adivinhar primeiro o título, o artista e as participações especiais de trechos de áudio.
 
-Monorepo gerenciado com **pnpm workspaces**.
+[Estudo de caso](https://luantaraschi.dev/projeto-soms.html)
 
-## Estrutura
+![SOMS Interface](docs/soms.webp)
 
-```
-soms/
-├── apps/
-│   ├── web/         — Next.js 15, Vercel
-│   └── realtime/    — Fastify + Socket.IO, Railway
-├── packages/
-│   ├── db/          — Prisma schema + client (Neon Postgres)
-│   ├── shared/      — Tipos, contratos WS, regras puras
-│   └── design-system/  — Tokens CSS, assets, UI kit, voz
-└── docs/project/    — PRD, ARCHITECTURE, DESIGN, SPRINT_1
-```
+## Como funciona
 
-## Docs
+O SOMS é estruturado como um monorepo pnpm dividido em duas aplicações principais: o frontend web em Next.js e a API em tempo real desenvolvida com Fastify e Socket.IO.
 
-- [PRD](docs/project/PRD.md) — produto, modos de jogo, escopo
-- [ARCHITECTURE](docs/project/ARCHITECTURE.md) — stack, schema, protocolo WS
-- [DESIGN](docs/project/DESIGN.md) — fonte de verdade visual (tokens, dark mode, componentes)
-- [Design system](packages/design-system/README.md) — implementação: voz pt-BR, copy, preview cards, UI kit
+O servidor de realtime gerencia o estado da sala, o relógio da partida e a fila de faixas musicais (`apps/realtime/src/game/round-runner.ts`). O mecanismo de pré-carregamento envia os metadados e os trechos de áudio antecipadamente aos clientes, garantindo sincronia milimétrica no início de cada rodada sem travamentos por buffering.
 
-## Setup
+O armazenamento de histórico, salas e pontuações é gerenciado via Prisma ORM conectado a um banco de dados PostgreSQL.
+
+## Rodar local
+
+Dependências de ambiente (Docker para PostgreSQL):
 
 ```bash
-pnpm install         # ainda não rode — apps e packages estão como placeholders
+docker compose up -d
 ```
 
-## Stack
+Instalação e execução do monorepo:
 
-| Camada | Tecnologia | Hospedagem |
-|---|---|---|
-| Web | Next.js 15 + TS strict + Tailwind v4 + shadcn/ui | Vercel |
-| Realtime | Fastify + Socket.IO + Node 22 | Railway |
-| DB | Postgres | Neon |
-| Cache | Redis | Upstash |
-| Auth | Auth.js v5 | — |
+```bash
+pnpm install
+pnpm db:migrate
+pnpm dev
+```
 
-Ver [ARCHITECTURE §1](docs/project/ARCHITECTURE.md) para detalhes.
+## Estado
+
+O projeto está configurado para execução local via Docker e pnpm. Não há servidor de demonstração público hospedado no momento.
+
+## Licença
+
+AGPL-3.0
